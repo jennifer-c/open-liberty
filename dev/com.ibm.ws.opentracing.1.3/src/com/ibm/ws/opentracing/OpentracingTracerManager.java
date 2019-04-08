@@ -16,6 +16,7 @@ import java.util.Map;
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.websphere.ras.annotation.Trivial;
+import com.ibm.ws.opentracing.driver.TracerDriverService;
 
 import io.opentracing.Span;
 import io.opentracing.Tracer;
@@ -72,7 +73,10 @@ public class OpentracingTracerManager {
         synchronized (applicationTracersLock) {
             tracer = getTracer(appName);
             if (tracer == null) {
-                tracer = createTracer(appName);
+                tracer = createTracerFromResolver(appName);
+                if (tracer == null) {
+                    tracer = createTracer(appName);
+                }
                 putTracer(appName, tracer);
                 tracerCase = "newly created";
             } else {
@@ -98,6 +102,21 @@ public class OpentracingTracerManager {
     @Trivial
     private static Tracer createTracer(String appName) {
         return OpentracingUserFeatureAccessService.getTracerInstance(appName);
+    }
+
+    /**
+     * <p>Use opentracing-resolver to create a tracer.</p>
+     *
+     * @param appName
+     * @return The new tracer.
+     */
+    private static Tracer createTracerFromResolver(String appName) {
+        TracerDriverService tds = TracerDriverService.getInstance();
+        if (tds != null) {
+            return tds.resolveTracer();
+        } else {
+            return null;
+        }
     }
 
     // Open tracing context pass through ...
@@ -213,4 +232,5 @@ public class OpentracingTracerManager {
             return new OpentracingContext();
         }
     }
+
 }

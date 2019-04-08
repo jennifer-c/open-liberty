@@ -6,10 +6,14 @@ IBM-App-ForceRestart: install, \
  uninstall
 IBM-ShortName: opentracing-1.3
 Subsystem-Name: Opentracing 1.3
-IBM-API-Package: io.opentracing;  type="third-party",\
-                 io.opentracing.tag;  type="third-party",\
-                 io.opentracing.propagation;  type="third-party", \
-                 com.ibm.ws.opentracing.tracer; type="ibm-spi"
+IBM-API-Package: io.opentracing;                         type="third-party", \
+                 io.opentracing.tag;                     type="third-party", \
+                 io.opentracing.propagation;             type="third-party", \
+                 io.opentracing.log;                     type="third-party", \
+    			 io.opentracing.util;                    type="third-party", \
+    			 io.opentracing.noop;                    type="third-party", \
+                 io.opentracing.contrib.tracerresolver;  type="third-party", \
+                 com.ibm.ws.opentracing.tracer;          type="ibm-spi"
 -features=com.ibm.websphere.appserver.jaxrs-2.1, \
           com.ibm.websphere.appserver.cdi-2.0, \
           com.ibm.websphere.appserver.mpConfig-1.3
