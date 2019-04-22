@@ -21,7 +21,7 @@ Include-Resource: \
   META-INF/LICENSE.txt=resources/META-INF/LICENSE.txt
 
 -buildpath: \
-  opentracing-tracerresolver-0.1.6-SNAPSHOT.jar;version=file
+  opentracing-tracerresolver-0.1.5-SNAPSHOT.jar;version=file
 
 instrument.disabled: true
 

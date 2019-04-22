@@ -13,19 +13,13 @@ bVersion=1.0
 
 instrument.disabled: true
 
-Bundle-SymbolicName: com.ibm.websphere.appserver.thirdparty.opentracing.0.31.0
-Bundle-Name: io.opentracing Third-Party API
-Bundle-Description: io.opentracing Third-Party API, version ${bVersion}
+Bundle-SymbolicName: com.ibm.websphere.appserver.thirdparty.opentracing.tracerresolver
+Bundle-Name: io.opentracing.contrib.tracerreslver Third-Party API
+Bundle-Description: io.opentracing.contrib.tracerresolver Third-Party API, version ${bVersion}
 
-Export-Package: io.opentracing;version=0.31.0, \
-    io.opentracing.propagation;version=0.31.0, \
-    io.opentracing.tag;version=0.31.0, \
-    io.opentracing.log;version=0.31.0, \
-    io.opentracing.util;version=0.31.0, \
-    io.opentracing.noop;version=0.31.0
-    
+Export-Package: io.opentracing.contrib.tracerresolver;version=0.1.5
+
 publish.wlp.jar.suffix: dev/api/third-party
 
 -buildpath: \
-	com.ibm.ws.io.opentracing.opentracing-api.0.31.0;version=latest, \
-	com.ibm.ws.io.opentracing.opentracing-util.0.31.0;version=latest
+	com.ibm.ws.io.opentracing.contrib.tracerresolver;version=latest

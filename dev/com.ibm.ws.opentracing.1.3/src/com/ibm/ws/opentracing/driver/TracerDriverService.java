@@ -10,8 +10,11 @@
  *******************************************************************************/
 package com.ibm.ws.opentracing.driver;
 
+import java.io.File;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Iterator;
+import java.util.ServiceLoader;
 
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
@@ -27,6 +30,7 @@ import com.ibm.wsspi.library.Library;
 import com.ibm.wsspi.library.LibraryChangeListener;
 
 import io.opentracing.Tracer;
+import io.opentracing.contrib.tracerresolver.TracerFactory;
 import io.opentracing.contrib.tracerresolver.TracerResolver;
 
 /**
@@ -80,8 +84,20 @@ public class TracerDriverService implements LibraryChangeListener {
             });
     }
 
-    public Tracer resolveTracer() {
+    public Tracer resolveTracer(String appName) {
+        System.out.println("FW share lib: " + sharedLib.toString());
+        for (File file : sharedLib.getFiles()) {
+            System.out.println("FW share lib file: " + file.getAbsolutePath());
+        }
+
         ClassLoader classloader = getClassLoaderWithPriv(sharedLib);
+        ServiceLoader<TracerFactory> sl = ServiceLoader.load(TracerFactory.class, classloader);
+        Iterator<TracerFactory> it = sl.iterator();
+        while (it.hasNext()) {
+            TracerFactory tf = it.next();
+            System.out.println("FW TracerFactory: " + tf.getClass().getName());
+        }
+        System.setProperty("JAEGER_SERVICE_NAME", appName);
         return TracerResolver.resolveTracer(classloader);
     }
 }
