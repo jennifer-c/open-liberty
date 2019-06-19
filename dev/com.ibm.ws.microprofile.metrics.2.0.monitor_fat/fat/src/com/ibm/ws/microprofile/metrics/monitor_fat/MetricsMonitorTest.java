@@ -99,14 +99,15 @@ public class MetricsMonitorTest {
     	Log.info(c, testName, "------- server started -----");
     	Assert.assertNotNull("CWWKT0016I NOT FOUND",server.waitForStringInLogUsingMark("CWWKT0016I"));
       	checkStrings(getHttpsServlet("/metrics"), 
-          	new String[] { "base:", "vendor:" }, 
+          	new String[] { "base_", "vendor_" }, 
           	new String[] {});
       	
       	Log.info(c, testName, "------- Remove mpMetrics-1.1: no metrics should be available ------");
       	server.setServerConfigurationFile("server_monitorOnly.xml");
-      	String logMsg = server.waitForStringInLogUsingMark("CWPMI2002I");
+      	// old one for metrics 1.1 was CWPMI2002I
+      	String logMsg = server.waitForStringInLogUsingMark("CWPMI2004I");
       	Log.info(c, testName, logMsg);
-      	Assert.assertNotNull("No CWPMI2002I message", logMsg);
+      	Assert.assertNotNull("No CWPMI2004I message", logMsg);
     }
     
     @Test
@@ -124,8 +125,8 @@ public class MetricsMonitorTest {
         Assert.assertNotNull("CWWKO0219I NOT FOUND",server.waitForStringInLog(".*CWWKO0219I.*defaultHttpEndpoint-ssl.*",60000));
         Log.info(c, testName, "------- server started -----");
       	checkStrings(getHttpsServlet("/metrics"), 
-          	new String[] { "base:" }, 
-          	new String[] { "vendor: "});
+          	new String[] { "base_" }, 
+          	new String[] { "vendor_"});
     }
     
     @Test
@@ -141,11 +142,11 @@ public class MetricsMonitorTest {
     	Assert.assertNotNull("CWWKO0219I NOT FOUND",server.waitForStringInLog(".*CWWKO0219I.*defaultHttpEndpoint-ssl.*",60000));
     	Log.info(c, testName, "------- server started -----");
       	checkStrings(getHttpsServlet("/metrics"),
-          	new String[] { "vendor:" }, 
+          	new String[] { "vendor_" }, 
           	new String[] {});
       	checkStrings(getHttpsServlet("/metrics/vendor/threadpool.Default_Executor.activeThreads"),
-              	new String[] { "vendor:threadpool_default_executor_active_threads" }, 
-              	new String[] { "vendor:threadpool_default_executor_size" });
+              	new String[] { "vendor_threadpool_activeThreads" }, 
+              	new String[] { "vendor_threadpool_size" });
     }
    
     private String getHttpServlet(String servletPath) throws Exception {
