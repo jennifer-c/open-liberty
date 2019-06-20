@@ -150,7 +150,7 @@ public class TestEnableDisableFeaturesTest {
        	Log.info(c, testName, "------- added testSessionApp to dropins -----");
     }
     
-    //@Test
+    @Test
     public void testEDF1() throws Exception {
     	currentServ = serverEDF1;
     	String testName = "testEDF1";
@@ -166,7 +166,7 @@ public class TestEnableDisableFeaturesTest {
             new String[] { "vendor_" });
     }
     
-    //@Test 
+    @Test 
     public void testEDF2() throws Exception {
     	currentServ = serverEDF2;
     	String testName = "testEDF2";
@@ -192,7 +192,7 @@ public class TestEnableDisableFeaturesTest {
     }
     
     // from here forward, make sure to fix the string sources
-    //@Test
+    @Test
     public void testEDF3() throws Exception {
     	currentServ = serverEDF3;
     	String testName = "testEDF3";
@@ -212,7 +212,7 @@ public class TestEnableDisableFeaturesTest {
        	}, new String[] {});
     }
     
-    //@Test 
+    @Test 
     public void testEDF4() throws Exception {
     	currentServ = serverEDF4;
     	String testName = "testEDF4";
@@ -249,7 +249,7 @@ public class TestEnableDisableFeaturesTest {
        	}, new String[] {});
     }
     
-    //@Test 
+    @Test 
     public void testEDF5() throws Exception {
     	currentServ = serverEDF5;
     	String testName = "testEDF5";
@@ -279,7 +279,7 @@ public class TestEnableDisableFeaturesTest {
        	}, new String[] {});
     }
     
-    //@Test
+    @Test
     public void testEDF6() throws Exception {
     	currentServ = serverEDF6;
     	String testName = "testEDF6";
@@ -330,7 +330,7 @@ public class TestEnableDisableFeaturesTest {
        		new String[] { "vendor_servlet", "vendor_threadpool" });
     }
     
-    //@Test 
+    @Test 
     public void testEDF9() throws Exception {
     	currentServ = serverEDF9;
     	String testName = "testEDF9";
@@ -351,7 +351,7 @@ public class TestEnableDisableFeaturesTest {
  		        new String[] {});
     }
     
-    //@Test
+    @Test
     public void testEDF10() throws Exception {
     	currentServ = serverEDF10;
     	String testName = "testEDF10";
@@ -371,7 +371,7 @@ public class TestEnableDisableFeaturesTest {
     		new String[] { "vendor_jaxws_client", "vendor_jaxws_server"});       	
     }
     
-    //@Test
+    @Test
     public void testEDF11() throws Exception {
     	currentServ = serverEDF11;
     	String testName = "testEDF11";
@@ -389,7 +389,7 @@ public class TestEnableDisableFeaturesTest {
     		new String[] { "vendor_connectionpool", "vendor_servlet_test" });
     }
     
-    //@Test
+    @Test
     public void testEDF12() throws Exception {
     	currentServ = serverEDF12;
     	String testName = "testEDF12";
