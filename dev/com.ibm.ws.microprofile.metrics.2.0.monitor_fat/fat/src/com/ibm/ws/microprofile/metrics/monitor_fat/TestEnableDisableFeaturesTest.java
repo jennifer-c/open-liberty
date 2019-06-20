@@ -312,7 +312,7 @@ public class TestEnableDisableFeaturesTest {
        		new String[] { "vendor_threadpool", "vendor_connectionpool" });
     }
    
-    //@Test 
+    @Test 
     public void testEDF8() throws Exception {
     	currentServ = serverEDF8;
     	String testName = "testEDF8";

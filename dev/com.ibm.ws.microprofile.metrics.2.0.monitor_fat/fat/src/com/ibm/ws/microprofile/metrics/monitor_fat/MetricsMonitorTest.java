@@ -86,7 +86,7 @@ public class MetricsMonitorTest {
             server.removeAllInstalledAppsForValidation();
         }
     }
-
+    
     @Test
     public void testDisableMpMetricsFeature() throws Exception {
     	
@@ -99,10 +99,32 @@ public class MetricsMonitorTest {
     	Log.info(c, testName, "------- server started -----");
     	Assert.assertNotNull("CWWKT0016I NOT FOUND",server.waitForStringInLogUsingMark("CWWKT0016I"));
       	checkStrings(getHttpsServlet("/metrics"), 
-          	new String[] { "base_", "vendor_" }, 
+          	new String[] { "base:", "vendor:" }, 
           	new String[] {});
       	
       	Log.info(c, testName, "------- Remove mpMetrics-1.1: no metrics should be available ------");
+      	server.setServerConfigurationFile("server_monitorOnly.xml");
+      	String logMsg = server.waitForStringInLogUsingMark("CWPMI2002I");
+      	Log.info(c, testName, logMsg);
+      	Assert.assertNotNull("No CWPMI2002I message", logMsg);
+    }
+
+    @Test
+    public void testDisableMpMetrics20Feature() throws Exception {
+    	
+    	String testName = "testDisableMpMetricsFeature";
+    	
+    	Log.info(c, testName, "------- Enable mpMetrics-2.0 and monitor-1.0: vendor metrics should be available ------");
+    	server.setServerConfigurationFile("server_monitor2.xml");
+    	server.startServer();
+    	Log.info(c, testName, server.waitForStringInLog("defaultHttpEndpoint-ssl",60000));
+    	Log.info(c, testName, "------- server started -----");
+    	Assert.assertNotNull("CWWKT0016I NOT FOUND",server.waitForStringInLogUsingMark("CWWKT0016I"));
+      	checkStrings(getHttpsServlet("/metrics"), 
+          	new String[] { "base_", "vendor_" }, 
+          	new String[] {});
+      	
+      	Log.info(c, testName, "------- Remove mpMetrics-2.0: no metrics should be available ------");
       	server.setServerConfigurationFile("server_monitorOnly.xml");
       	// old one for metrics 1.1 was CWPMI2002I
       	String logMsg = server.waitForStringInLogUsingMark("CWPMI2004I");
@@ -125,8 +147,8 @@ public class MetricsMonitorTest {
         Assert.assertNotNull("CWWKO0219I NOT FOUND",server.waitForStringInLog(".*CWWKO0219I.*defaultHttpEndpoint-ssl.*",60000));
         Log.info(c, testName, "------- server started -----");
       	checkStrings(getHttpsServlet("/metrics"), 
-          	new String[] { "base_" }, 
-          	new String[] { "vendor_"});
+          	new String[] { "base:" }, 
+          	new String[] { "vendor:" });
     }
     
     @Test
@@ -142,11 +164,11 @@ public class MetricsMonitorTest {
     	Assert.assertNotNull("CWWKO0219I NOT FOUND",server.waitForStringInLog(".*CWWKO0219I.*defaultHttpEndpoint-ssl.*",60000));
     	Log.info(c, testName, "------- server started -----");
       	checkStrings(getHttpsServlet("/metrics"),
-          	new String[] { "vendor_" }, 
+          	new String[] { "vendor:" }, 
           	new String[] {});
       	checkStrings(getHttpsServlet("/metrics/vendor/threadpool.Default_Executor.activeThreads"),
-              	new String[] { "vendor_threadpool_activeThreads" }, 
-              	new String[] { "vendor_threadpool_size" });
+      			new String[] { "vendor:threadpool_default_executor_active_threads" }, 
+              	new String[] { "vendor:threadpool_default_executor_size" });
     }
    
     private String getHttpServlet(String servletPath) throws Exception {
