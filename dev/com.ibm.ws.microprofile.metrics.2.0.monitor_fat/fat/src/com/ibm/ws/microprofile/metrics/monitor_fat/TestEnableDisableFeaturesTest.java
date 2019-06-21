@@ -149,13 +149,18 @@ public class TestEnableDisableFeaturesTest {
        	ShrinkHelper.defaultDropinApp(serverEDF12, "testSessionApp", "com.ibm.ws.microprofile.metrics.monitor_fat.session.servlet");
        	Log.info(c, testName, "------- added testSessionApp to dropins -----");
     }
-    
+
+    @Test
+    public void test() throws Exception {
+    	serverEDF6.startServer();
+    	Thread.sleep(1000*3*60);
+    }
     @Test
     public void testEDF1() throws Exception {
     	currentServ = serverEDF1;
     	String testName = "testEDF1";
         Log.info(c, testName, "------- No monitor-1.0: no vendor metrics should be available ------");
-        serverEDF1.setServerConfigurationFile("server_mpMetric11.xml");
+        serverEDF1.setServerConfigurationFile("server_mpMetric20.xml");
         serverEDF1.startServer();
         Assert.assertNotNull("Web application /metrics not loaded", serverEDF1.waitForStringInLog("CWWKT0016I: Web application available \\(default_host\\): http:\\/\\/.*:.*\\/metrics\\/"));
         Assert.assertNotNull("CWWKO0219I NOT FOUND",serverEDF1.waitForStringInLogUsingMark("defaultHttpEndpoint-ssl"));
@@ -170,9 +175,9 @@ public class TestEnableDisableFeaturesTest {
     public void testEDF2() throws Exception {
     	currentServ = serverEDF2;
     	String testName = "testEDF2";
-    	Log.info(c, testName, "------- Enable mpMetrics-1.1 and monitor-1.0: threadpool metrics should be available ------");
+    	Log.info(c, testName, "------- Enable mpMetrics-2.0 and monitor-1.0: threadpool metrics should be available ------");
     	serverEDF2.startServer();
-    	serverEDF2.setServerConfigurationFile("server_monitor.xml");
+    	serverEDF2.setServerConfigurationFile("server_monitor2.xml");
     	// CWMPI2003I is for mpMetrics-2.0 and monitor-1.0; CWMPI2001I is for mpMetrics-1.x and monitor-1.0
         String logMsg = serverEDF2.waitForStringInLogUsingMark("CWPMI2003I");
         Log.info(c, testName, logMsg);
@@ -187,11 +192,9 @@ public class TestEnableDisableFeaturesTest {
            	"vendor_threadpool_size{pool=\"Default_Executor\"}",
            	"vendor_servlet_responseTime_total_seconds{servlet=\"com_ibm_ws_microprofile_metrics_private_PrivateMetricsRESTProxyServlet\"}",
            	"vendor_servlet_request_total{servlet=\"com_ibm_ws_microprofile_metrics_private_PrivateMetricsRESTProxyServlet\"}"
-           	//"vendor:servlet_com_ibm_ws_microprofile_metrics"
        	}, new String[] {});
     }
     
-    // from here forward, make sure to fix the string sources
     @Test
     public void testEDF3() throws Exception {
     	currentServ = serverEDF3;
@@ -204,11 +207,11 @@ public class TestEnableDisableFeaturesTest {
     		new String[] { "Session id:" }, new String[] {});
        	Log.info(c, testName, "------- session metrics should be available ------");
        	checkStrings(getHttpsServlet("/metrics/vendor",serverEDF3), new String[] {
-       		"vendor_session_create_total",
-       		"vendor_session_liveSessions",
-       		"vendor_session_activeSessions",
-       		"vendor_session_invalidated_total",
-       		"vendor_session_invalidatedbyTimeout_total"
+       		"vendor_session_create_total{appname=\"default_host_testSessionApp\"}",
+       		"vendor_session_liveSessions{appname=\"default_host_testSessionApp\"}",
+       		"vendor_session_activeSessions{appname=\"default_host_testSessionApp\"}",
+       		"vendor_session_invalidated_total{appname=\"default_host_testSessionApp\"}",
+       		"vendor_session_invalidatedbyTimeout_total{appname=\"default_host_testSessionApp\"}"
        	}, new String[] {});
     }
     
@@ -228,24 +231,24 @@ public class TestEnableDisableFeaturesTest {
       		new String[] { "sql: create table cities" }, new String[] {});
        	Log.info(c, testName, "------- connectionpool metrics should be available ------");
        	checkStrings(getHttpsServlet("/metrics/vendor", serverEDF4), new String[] {
-       		"vendor_connectionpool_connectionHandles",
-       		"vendor_connectionpool_freeConnections",
-       		"vendor_connectionpool_destroy_total",
-       		"vendor_connectionpool_create_total",
-       		"vendor_connectionpool_managedConnections",
-       		"vendor_connectionpool_waitTime_total",
-       		"vendor_connectionpool_inUseTime_total",
-       		"vendor_connectionpool_queuedRequests_total",
-       		"vendor_connectionpool_usedConnections_total",
-       		"vendor_connectionpool_connectionHandles",
-       		"vendor_connectionpool_freeConnections",
-       		"vendor_connectionpool_destroy_total",
-       		"vendor_connectionpool_create_total",
-       		"vendor_connectionpool_managedConnections",
-       		"vendor_connectionpool_waitTime_total",
-       		"vendor_connectionpool_inUseTime_total",
-       		"vendor_connectionpool_queuedRequests_total",
-       		"vendor_connectionpool_usedConnections_total",
+       		"vendor_connectionpool_connectionHandles{datasource=\"jdbc_exampleDS1\"}",
+       		"vendor_connectionpool_freeConnections{datasource=\"jdbc_exampleDS1\"}",
+       		"vendor_connectionpool_destroy_total{datasource=\"jdbc_exampleDS1\"}",
+       		"vendor_connectionpool_create_total{datasource=\"jdbc_exampleDS1\"}",
+       		"vendor_connectionpool_managedConnections{datasource=\"jdbc_exampleDS1\"}",
+       		"vendor_connectionpool_waitTime_total{datasource=\"jdbc_exampleDS1\"}",
+       		"vendor_connectionpool_inUseTime_total{datasource=\"jdbc_exampleDS1\"}",
+       		"vendor_connectionpool_queuedRequests_total{datasource=\"jdbc_exampleDS1\"}",
+       		"vendor_connectionpool_usedConnections_total{datasource=\"jdbc_exampleDS1\"}",
+       		"vendor_connectionpool_connectionHandles{datasource=\"jdbc_exampleDS2\"}",
+       		"vendor_connectionpool_freeConnections{datasource=\"jdbc_exampleDS2\"}",
+       		"vendor_connectionpool_destroy_total{datasource=\"jdbc_exampleDS2\"}",
+       		"vendor_connectionpool_create_total{datasource=\"jdbc_exampleDS2\"}",
+       		"vendor_connectionpool_managedConnections{datasource=\"jdbc_exampleDS2\"}",
+       		"vendor_connectionpool_waitTime_total{datasource=\"jdbc_exampleDS2\"}",
+       		"vendor_connectionpool_inUseTime_total{datasource=\"jdbc_exampleDS2\"}",
+       		"vendor_connectionpool_queuedRequests_total{datasource=\"jdbc_exampleDS2\"}",
+       		"vendor_connectionpool_usedConnections_total{datasource=\"jdbc_exampleDS2\"}",
        	}, new String[] {});
     }
     
@@ -262,16 +265,15 @@ public class TestEnableDisableFeaturesTest {
        		new String[] { "Pass" }, new String[] {});
        	Log.info(c, testName, "------- jax-ws metrics should be available ------");
        	checkStrings(getHttpsServlet("/metrics/vendor",serverEDF5), new String[] {
-       		"vendor_jaxws_client_checkedApplicationFaults_total",
-       		"vendor_jaxws_client_runtimeFaults_total",
-      		//"vendor_jaxws_client_responseTime_total_seconds", <- not sure if seconds appears
-       		"vendor_jaxws_client_responseTime_total",
-       		"vendor_jaxws_client_invocations_total",
-       		"vendor_jaxws_client_uncheckedApplicationFaults_total",
-       		"vendor_jaxws_client_logicalRuntimeFaults_total",
+       		"vendor_jaxws_client_checkedApplicationFaults_total{endpoint=\"jaxws.monitor_fat.metrics.microprofile.ws.ibm.com..SimpleEchoService.SimpleEchoPort\"}",
+       		"vendor_jaxws_client_runtimeFaults_total{endpoint=\"jaxws.monitor_fat.metrics.microprofile.ws.ibm.com..SimpleEchoService.SimpleEchoPort\"}",
+       		"vendor_jaxws_client_responseTime_total_seconds{endpoint=\"jaxws.monitor_fat.metrics.microprofile.ws.ibm.com..SimpleEchoService.SimpleEchoPort\"}",
+       		"vendor_jaxws_client_invocations_total{endpoint=\"jaxws.monitor_fat.metrics.microprofile.ws.ibm.com..SimpleEchoService.SimpleEchoPort\"}",
+       		"vendor_jaxws_client_uncheckedApplicationFaults_total_total{endpoint=\"jaxws.monitor_fat.metrics.microprofile.ws.ibm.com..SimpleEchoService.SimpleEchoPort\"}",
+       		"vendor_jaxws_client_logicalRuntimeFaults_total{endpoint=\"jaxws.monitor_fat.metrics.microprofile.ws.ibm.com..SimpleEchoService.SimpleEchoPort\"}",
+       		// why are they duplicated ?????
        		"vendor_jaxws_server_checkedApplicationFaults_total",
        		"vendor_jaxws_server_runtimeFaults_total",
-       		//"vendor_jaxws_server_responseTime_total_seconds", <- seconds?
        		"vendor_jaxws_server_responseTime_total",
        		"vendor_jaxws_server_invocations_total",
        		"vendor_jaxws_server_uncheckedApplicationFaults_total",
@@ -386,7 +388,7 @@ public class TestEnableDisableFeaturesTest {
     	checkStrings(getHttpsServlet("/metrics/vendor",serverEDF11), 
     		new String[] { "vendor_" },       	
     		//new String[] { "vendor_connectionpool", "vendor_servlet_test_jdbc_app" });
-    		new String[] { "vendor_connectionpool", "vendor_servlet_test" });
+    		new String[] { "vendor_connectionpool", "vendor_servlet", "{servlet=\"testJDBCApp\"}" });
     }
     
     @Test

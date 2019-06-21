@@ -151,7 +151,7 @@ public class MetricsMonitorTest {
           	new String[] { "vendor:" });
     }
     
-    @Test
+    //@Test
     public void testMicroProfileMonitor10Feature() throws Exception {
     	
     	String testName = "testMicroProfileMonitor10Feature";
