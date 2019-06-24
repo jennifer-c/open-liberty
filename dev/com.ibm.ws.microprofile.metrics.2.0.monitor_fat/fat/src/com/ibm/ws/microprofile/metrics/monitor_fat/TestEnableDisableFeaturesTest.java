@@ -151,11 +151,6 @@ public class TestEnableDisableFeaturesTest {
     }
 
     @Test
-    public void test() throws Exception {
-    	serverEDF6.startServer();
-    	Thread.sleep(1000*3*60);
-    }
-    @Test
     public void testEDF1() throws Exception {
     	currentServ = serverEDF1;
     	String testName = "testEDF1";
@@ -271,13 +266,12 @@ public class TestEnableDisableFeaturesTest {
        		"vendor_jaxws_client_invocations_total{endpoint=\"jaxws.monitor_fat.metrics.microprofile.ws.ibm.com..SimpleEchoService.SimpleEchoPort\"}",
        		"vendor_jaxws_client_uncheckedApplicationFaults_total_total{endpoint=\"jaxws.monitor_fat.metrics.microprofile.ws.ibm.com..SimpleEchoService.SimpleEchoPort\"}",
        		"vendor_jaxws_client_logicalRuntimeFaults_total{endpoint=\"jaxws.monitor_fat.metrics.microprofile.ws.ibm.com..SimpleEchoService.SimpleEchoPort\"}",
-       		// why are they duplicated ?????
-       		"vendor_jaxws_server_checkedApplicationFaults_total",
-       		"vendor_jaxws_server_runtimeFaults_total",
-       		"vendor_jaxws_server_responseTime_total",
-       		"vendor_jaxws_server_invocations_total",
-       		"vendor_jaxws_server_uncheckedApplicationFaults_total",
-       		"vendor_jaxws_server_logicalRuntimeFaults_total"	
+       		"vendor_jaxws_server_checkedApplicationFaults_total{endpoint=\"jaxws.monitor_fat.metrics.microprofile.ws.ibm.com..SimpleEchoService.SimpleEchoPort\"}",
+       		"vendor_jaxws_server_runtimeFaults_total{endpoint=\"jaxws.monitor_fat.metrics.microprofile.ws.ibm.com..SimpleEchoService.SimpleEchoPort\"}",
+       		"vendor_jaxws_server_responseTime_total{endpoint=\"jaxws.monitor_fat.metrics.microprofile.ws.ibm.com..SimpleEchoService.SimpleEchoPort\"}",
+       		"vendor_jaxws_server_invocations_total{endpoint=\"jaxws.monitor_fat.metrics.microprofile.ws.ibm.com..SimpleEchoService.SimpleEchoPort\"}",
+       		"vendor_jaxws_server_uncheckedApplicationFaults_total{endpoint=\"jaxws.monitor_fat.metrics.microprofile.ws.ibm.com..SimpleEchoService.SimpleEchoPort\"}",
+       		"vendor_jaxws_server_logicalRuntimeFaults_total{endpoint=\"jaxws.monitor_fat.metrics.microprofile.ws.ibm.com..SimpleEchoService.SimpleEchoPort\"}"	
        	}, new String[] {});
     }
     
