@@ -229,7 +229,7 @@ public class PrometheusMetricWriter implements OutputWriter {
             } else if (ConcurrentGauge.class.isInstance(metric)) {
                 PrometheusBuilder.buildConcurrentGauge(builder, metricNamePrometheus, (ConcurrentGauge) metric, description, tags);
             } else if (Gauge.class.isInstance(metric)) {
-//                PrometheusBuilder.buildGauge(builder, metricNamePrometheus, (Gauge) metric, description, conversionFactor, tags, appendUnit);
+                PrometheusBuilder.buildGauge(builder, metricNamePrometheus, (Gauge) metric, description, conversionFactor, tags, appendUnit);
             } else if (Timer.class.isInstance(metric)) {
                 PrometheusBuilder.buildTimer(builder, metricNamePrometheus, (Timer) metric, description, tags);
             } else if (Histogram.class.isInstance(metric)) {
