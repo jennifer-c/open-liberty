@@ -111,6 +111,9 @@ public class BaseMetrics {
         registry.register("cpu.processCpuLoad", new BMGauge<Number>(BaseMetricConstants.OS_OBJECT_TYPE, "ProcessCpuLoad"),
                           new Metadata("cpu.processCpuLoad", "Process CPU Load", "cpu.processCpuLoad.description", MetricType.GAUGE, MetricUnits.PERCENT));
 
+        registry.register("cpu.processCpuTime", new BMGauge<Number>(BaseMetricConstants.OS_OBJECT_TYPE, "ProcessCpuTime"),
+                          new Metadata("cpu.processCpuTime", "Process CPU Time", "cpu.processCpuTime.description", MetricType.GAUGE, MetricUnits.NONE));
+
         //GARBAGE COLLECTOR METRICS
         for (String gcName : gcObjectNames) {
 
