@@ -117,8 +117,8 @@ public class BaseMetrics {
                           new BMGauge<Number>(BaseMetricConstants.OS_OBJECT_TYPE, "ProcessCpuLoad"));
 
         // Leaving out until new spec is released
-//        registry.register(Metadata.builder().withName("cpu.processCpuTime").withDisplayName("Process CPU Time").withDescription("cpu.processCpuTime.description").withType(MetricType.GAUGE).withUnit(MetricUnits.NANOSECONDS).build(),
-//                          new BMGauge<Number>(BaseMetricConstants.OS_OBJECT_TYPE, "ProcessCpuTime"));
+        registry.register(Metadata.builder().withName("cpu.processCpuTime").withDisplayName("Process CPU Time").withDescription("cpu.processCpuTime.description").withType(MetricType.GAUGE).withUnit(MetricUnits.NANOSECONDS).build(),
+                          new BMGauge<Number>(BaseMetricConstants.OS_OBJECT_TYPE, "ProcessCpuTime"));
 
         //GARBAGE COLLECTOR METRICS
         for (String gcName : gcObjectNames) {
