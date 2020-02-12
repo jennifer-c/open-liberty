@@ -29,6 +29,7 @@ public class AccessLogStartTime extends AccessLogData {
     public boolean set(StringBuilder accessLogEntry,
                        HttpResponseMessage response, HttpRequestMessage request,
                        Object data) {
+        // Can we just use "getStartTimeAsString" instead, or will that impact performance?
         long startTime = getStartTime(response, request, data);
 
         if (startTime != 0) {
@@ -57,4 +58,17 @@ public class AccessLogStartTime extends AccessLogData {
         return startTime;
     }
 
+    public static String getStartTimeAsString(HttpResponseMessage response, HttpRequestMessage request, Object data) {
+        StringBuilder requestStartTime = new StringBuilder();
+        long startTime = getStartTime(response, request, data);
+        if (startTime != 0) {
+            Date startDate = new Date(startTime);
+            requestStartTime.append("[");
+            requestStartTime.append(HttpDispatcher.getDateFormatter().getNCSATime(startDate));
+            requestStartTime.append("]");
+        } else {
+            requestStartTime.append("-");
+        }
+        return requestStartTime.toString();
+    }
 }

@@ -36,7 +36,18 @@ public class AccessLogData extends GenericData {
                                               LogFieldConstants.HOST,
                                               LogFieldConstants.IBM_USERDIR,
                                               LogFieldConstants.IBM_SERVERNAME,
-                                              LogFieldConstants.TYPE
+                                              LogFieldConstants.TYPE,
+                                              LogFieldConstants.IBM_REMOTEIP,
+                                              LogFieldConstants.IBM_BYTESRECEIVEDFORMATTED,
+                                              LogFieldConstants.IBM_COOKIE,
+                                              LogFieldConstants.IBM_REQUESTELAPSEDTIME,
+                                              LogFieldConstants.IBM_REQUESTHEADER,
+                                              LogFieldConstants.IBM_RESPONSEHEADER,
+                                              LogFieldConstants.IBM_REQUESTFIRSTLINE,
+                                              LogFieldConstants.IBM_REQUESTSTARTTIME,
+                                              LogFieldConstants.IBM_ACCESSLOGDATETIME,
+                                              LogFieldConstants.IBM_REMOTEUSERID
+
     };
 
     private final static String[] NAMES = {
@@ -58,6 +69,9 @@ public class AccessLogData extends GenericData {
 
     private static NameAliases jsonLoggingNameAliases = new NameAliases(NAMES1_1);
 
+    // lg265 testing
+    public static boolean isCustomAccessLogToJSONEnabled = false;
+
     public static void newJsonLoggingNameAliases(Map<String, String> newAliases) {
         jsonLoggingNameAliases.newAliases(newAliases);
     }
@@ -67,7 +81,8 @@ public class AccessLogData extends GenericData {
     }
 
     public AccessLogData() {
-        super(14);
+        // Needs to be a dynamic size?
+        super(24);
     }
 
     private void setPair(int index, String s) {
@@ -138,9 +153,51 @@ public class AccessLogData extends GenericData {
         setPair(13, s);
     }
 
-    public long getRequestStartTime() {
-        return getLongValue(0);
+    // LG-265
+    public void setRemoteIP(String s) {
+        setPair(14, s);
     }
+
+    public void setBytesReceivedFormatted(String s) {
+        setPair(15, s);
+    }
+
+    public void setCookies(KeyValuePairList kvps) {
+        setPair(16, kvps);
+    }
+
+    public void setRequestElapsedTime(long l) {
+        setPair(17, l);
+    }
+
+    public void setRequestHeader(KeyValuePairList kvps) {
+        setPair(18, kvps);
+    }
+
+    public void setResponseHeader(KeyValuePairList kvps) {
+        setPair(19, kvps);
+    }
+
+    public void setRequestFirstLine(String s) {
+        setPair(20, s);
+    }
+
+    public void setRequestStartTime(String s) {
+        setPair(21, s);
+    }
+
+    public void setAccessLogDatetime(String s) {
+        setPair(22, s);
+    }
+
+    public void setRemoteUser(String s) {
+        setPair(23, s);
+    }
+    // END LG-265
+
+//    public long getRequestStartTime() {
+//        return getLongValue(0);
+//    }
 
     public String getUriPath() {
         return getStringValue(1);
@@ -193,6 +250,57 @@ public class AccessLogData extends GenericData {
     public String getSequence() {
         return getStringValue(13);
     }
+
+    // LG-265
+    public String getRemoteIP() {
+        return getStringValue(14);
+    }
+
+    public String getBytesReceivedFormatted() {
+        return getStringValue(15);
+    }
+
+    public KeyValuePairList getCookies() {
+        return getValues(16);
+    }
+
+    public long getRequestElapsedTime() {
+        try {
+            return getLongValue(17);
+        } catch (Exception e) {
+            // Do nothing, the field hasn't been set in the logFormat
+        }
+        return -1;
+    }
+
+    public KeyValuePairList getRequestHeaders() {
+        return getValues(18);
+    }
+
+    public KeyValuePairList getResponseHeaders() {
+        return getValues(19);
+    }
+
+    public String getRequestFirstLine() {
+        return getStringValue(20);
+    }
+
+    public String getRequestStartTime() {
+        return getStringValue(21);
+    }
+
+    public String getAccessLogDatetime() {
+        return getStringValue(22);
+    }
+
+    public String getRemoteUser() {
+        return getStringValue(23);
+    }
+
+    private KeyValuePairList getValues(int index) {
+        return (KeyValuePairList) getPairs()[index];
+    }
+    // END LG-265
 
     public String getRequestStartTimeKey() {
         return NAMES[0];
@@ -307,9 +415,10 @@ public class AccessLogData extends GenericData {
     }
 
     //name aliases
-    public static String getRequestStartTimeKeyJSON() {
-        return jsonLoggingNameAliases.aliases[0];
-    }
+    // TODO: Maybe uncomment this later?
+//    public static String getRequestStartTimeKeyJSON() {
+//        return jsonLoggingNameAliases.aliases[0];
+//    }
 
     public static String getUriPathKeyJSON() {
         return jsonLoggingNameAliases.aliases[1];
@@ -379,4 +488,45 @@ public class AccessLogData extends GenericData {
         return jsonLoggingNameAliases.aliases[17];
     }
 
+    // LG-265
+    public static String getRemoteIPKeyJSON() {
+        return jsonLoggingNameAliases.aliases[18];
+    }
+
+    public static String getBytesReceivedFormattedKeyJSON() {
+        return jsonLoggingNameAliases.aliases[19];
+    }
+
+    public static String getCookieKeyJSON(KeyValuePair kvp) {
+        return jsonLoggingNameAliases.aliases[20] + "_" + kvp.getKey();
+    }
+
+    public static String getRequestElapsedTimeKeyJSON() {
+        return jsonLoggingNameAliases.aliases[21];
+    }
+
+    public static String getRequestHeaderKeyJSON(KeyValuePair kvp) {
+        return jsonLoggingNameAliases.aliases[22] + "_" + kvp.getKey();
+    }
+
+    public static String getResponseHeaderKeyJSON(KeyValuePair kvp) {
+        return jsonLoggingNameAliases.aliases[23] + "_" + kvp.getKey();
+    }
+
+    public static String getRequestFirstLineKeyJSON() {
+        return jsonLoggingNameAliases.aliases[24];
+    }
+
+    public static String getRequestStartTimeKeyJSON() {
+        return jsonLoggingNameAliases.aliases[25];
+    }
+
+    public static String getAccessLogDatetimeKeyJSON() {
+        return jsonLoggingNameAliases.aliases[26];
+    }
+
+    public static String getRemoteUserKeyJSON() {
+        return jsonLoggingNameAliases.aliases[27];
+    }
+    // END LG-265
 }

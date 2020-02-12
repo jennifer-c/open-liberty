@@ -109,6 +109,11 @@
             ibm:variable="com.ibm.ws.logging.json.field.mappings"
             id="jsonFieldMappings" required="false" type="String" default="">
         </AD>
+        
+        <AD name="%json.custom.access.log.fields.desc" description="%json.custom.access.log.fields.desc"
+        	ibm:variable="com.ibm.ws.logging.json.enable.custom.access.log.fields"
+        	id="enableCustomAccessLogFields" required="false" type="Boolean" default="false" />
+        	
     </OCD>
   
     <Designate pid="com.ibm.ws.logging">
