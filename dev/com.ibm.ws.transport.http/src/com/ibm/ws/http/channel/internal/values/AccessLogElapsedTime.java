@@ -24,10 +24,27 @@ public class AccessLogElapsedTime extends AccessLogData {
         // Millisecond accuracy, microsecond precision
     }
 
+    // Need some way to "remember" the elapsedTime value, aka the System.nanoTime - startTime
+    // Does it need to be static?
+    static long currentTime = 0;
+
     @Override
     public boolean set(StringBuilder accessLogEntry,
                        HttpResponseMessage response, HttpRequestMessage request,
                        Object data) {
+        long startTime = getStartTime(response, request, data);
+        if (startTime != 0) {
+            currentTime = System.nanoTime();
+            long elapsedTime = currentTime - startTime;
+            accessLogEntry.append(TimeUnit.NANOSECONDS.toMicros(elapsedTime));
+        } else {
+            accessLogEntry.append("-");
+        }
+
+        return true;
+    }
+
+    public static long getStartTime(HttpResponseMessage response, HttpRequestMessage request, Object data) {
         HttpRequestMessageImpl requestMessageImpl = null;
         long startTime = 0;
         if (request != null) {
@@ -37,15 +54,16 @@ public class AccessLogElapsedTime extends AccessLogData {
         if (requestMessageImpl != null) {
             startTime = requestMessageImpl.getStartTime();
         }
-
-        if (startTime != 0) {
-            long elapsedTime = System.nanoTime() - startTime;
-            accessLogEntry.append(TimeUnit.NANOSECONDS.toMicros(elapsedTime));
-        } else {
-            accessLogEntry.append("-");
-        }
-
-        return true;
+        return startTime;
     }
 
+    public static long getElapsedTime(HttpResponseMessage response, HttpRequestMessage request, Object data) {
+        long startTime = getStartTime(response, request, data);
+        if (startTime != 0) {
+            long elapsedTime = currentTime - startTime;
+            return TimeUnit.NANOSECONDS.toMicros(elapsedTime);
+        } else {
+            return 0;
+        }
+    }
 }

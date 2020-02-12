@@ -37,7 +37,7 @@ public class AccessLogCurrentTime extends AccessLogData {
     @Override
     public boolean set(StringBuilder accessLogEntry,
                        HttpResponseMessage response, HttpRequestMessage request, Object data) {
-
+        // Should we just use "getAccessLogCurrentTimeAsString"? Will performance be impacted?
         if (data == null) {
             accessLogEntry.append("[");
             accessLogEntry.append(HttpDispatcher.getDateFormatter().getNCSATime(new Date(System.currentTimeMillis())));
@@ -50,4 +50,15 @@ public class AccessLogCurrentTime extends AccessLogData {
         return true;
     }
 
+    public static String getAccessLogCurrentTimeAsString(HttpResponseMessage response, HttpRequestMessage request, Object data) {
+        StringBuilder accessLogCurrentTime = new StringBuilder();
+        if (data == null) {
+            accessLogCurrentTime.append("[");
+            accessLogCurrentTime.append(HttpDispatcher.getDateFormatter().getNCSATime(new Date(System.currentTimeMillis())));
+            accessLogCurrentTime.append("]");
+        } else {
+            accessLogCurrentTime.append("%{").append(data).append("}W");
+        }
+        return accessLogCurrentTime.toString();
+    }
 }

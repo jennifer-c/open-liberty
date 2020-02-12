@@ -57,4 +57,17 @@ public class AccessLogStartTime extends AccessLogData {
         return startTime;
     }
 
+    public static String getStartTimeAsString(HttpResponseMessage response, HttpRequestMessage request, Object data) {
+        StringBuilder requestStartTime = new StringBuilder();
+        long startTime = getStartTime(response, request, data);
+        if (startTime != 0) {
+            Date startDate = new Date(startTime);
+            requestStartTime.append("[");
+            requestStartTime.append(HttpDispatcher.getDateFormatter().getNCSATime(startDate));
+            requestStartTime.append("]");
+            return requestStartTime.toString();
+        }
+        // If we couldn't get the start time, just return null to not have the field show up in the JSON logs
+        return null;
+    }
 }

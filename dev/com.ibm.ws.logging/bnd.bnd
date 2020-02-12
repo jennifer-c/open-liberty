@@ -61,6 +61,6 @@ instrument.disabled: true
 	com.ibm.ws.org.objectweb.asm;version=latest,\
 	com.ibm.websphere.org.osgi.service.cm;version=latest,\
 	com.ibm.wsspi.org.osgi.service.event;version=latest,\
-	com.ibm.wsspi.org.osgi.service.log;version=latest, \
+	com.ibm.wsspi.org.osgi.service.log;version=latest,\
 	com.ibm.ws.org.osgi.annotation.versioning;version=latest
 

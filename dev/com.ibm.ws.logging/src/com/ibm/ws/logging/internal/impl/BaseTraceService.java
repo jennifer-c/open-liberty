@@ -185,6 +185,9 @@ public class BaseTraceService implements TrService {
     /** If true, format the date and time format for log entries in messages.log, trace.log, and FFDC files in ISO-8601 format. */
     protected volatile boolean isoDateFormat = false;
 
+    /** If true, format JSON logs to match the logFormat for access logging */
+    protected volatile String jsonAccessLogFields = "";
+
     /** Writer sending messages to the messages.log file */
     protected volatile TraceWriter messagesLog = null;
 
@@ -256,7 +259,7 @@ public class BaseTraceService implements TrService {
      * of system properties we expect (for FFDC and logging).
      *
      * @param config a {@link LogProviderConfigImpl} containing TrService configuration
-     *            from bootstrap properties
+     *                   from bootstrap properties
      */
     @Override
     public void init(LogProviderConfig config) {
@@ -282,10 +285,12 @@ public class BaseTraceService implements TrService {
             }
 
             @Override
-            public void flush() {}
+            public void flush() {
+            }
 
             @Override
-            public void close() {}
+            public void close() {
+            }
         });
     }
 
@@ -302,7 +307,7 @@ public class BaseTraceService implements TrService {
      * so values set there are not unset by metatype defaults.
      *
      * @param config a {@link LogProviderConfigImpl} containing dynamic updates from
-     *            the OSGi managed service.
+     *                   the OSGi managed service.
      */
     @Override
     public synchronized void update(LogProviderConfig config) {
@@ -328,6 +333,15 @@ public class BaseTraceService implements TrService {
         }
 
         applyJsonFields(trConfig.getjsonFields());
+        // lg265
+        TraceComponent tc = Tr.register(LogTraceData.class, NLSConstants.GROUP, NLSConstants.LOGGING_NLS);
+        jsonAccessLogFields = trConfig.getjsonAccessLogFields();
+        if (jsonAccessLogFields != AccessLogData.isCustomAccessLogToJSONEnabled) {
+            AccessLogData.isCustomAccessLogToJSONEnabled = jsonAccessLogFields;
+        }
+
+        // end lg 265
+
         initializeWriters(trConfig);
         if (hideMessageids.size() > 0) {
             String msgKey = isHpelEnabled ? "MESSAGES_CONFIGURED_HIDDEN_HPEL" : "MESSAGES_CONFIGURED_HIDDEN_2";
@@ -993,10 +1007,10 @@ public class BaseTraceService implements TrService {
     /**
      * Publish a trace log record.
      *
-     * @param detailLog the trace writer
+     * @param detailLog           the trace writer
      * @param logRecord
-     * @param id the trace object id
-     * @param formattedMsg the result of {@link BaseTraceFormatter#formatMessage}
+     * @param id                  the trace object id
+     * @param formattedMsg        the result of {@link BaseTraceFormatter#formatMessage}
      * @param formattedVerboseMsg the result of {@link BaseTraceFormatter#formatVerboseMessage}
      */
     protected void publishTraceLogRecord(TraceWriter detailLog, LogRecord logRecord, Object id, String formattedMsg, String formattedVerboseMsg) {
@@ -1143,7 +1157,7 @@ public class BaseTraceService implements TrService {
      * the trace file.
      *
      * @param config a {@link LogProviderConfigImpl} containing TrService configuration
-     *            from bootstrap properties
+     *                   from bootstrap properties
      */
     protected void initializeWriters(LogProviderConfigImpl config) {
         // createFileLog may or may not return the original log holder..
@@ -1285,7 +1299,8 @@ public class BaseTraceService implements TrService {
 
         /** {@inheritDoc} */
         @Override
-        public void close() throws IOException {}
+        public void close() throws IOException {
+        }
 
         /**
          * Only allow "off" as a valid value for toggling system.out
@@ -1601,8 +1616,8 @@ public class BaseTraceService implements TrService {
      * Write the text to the associated original stream.
      * This is preserved as a subroutine for extension by other delegates (test, JSR47 logging)
      *
-     * @param tc StreamTraceComponent associated with original stream
-     * @param txt pre-formatted or raw message
+     * @param tc        StreamTraceComponent associated with original stream
+     * @param txt       pre-formatted or raw message
      * @param rawStream if true, this is from direct invocation of System.out or System.err
      */
     protected synchronized void writeStreamOutput(SystemLogHolder holder, String txt, boolean rawStream) {

@@ -10,6 +10,7 @@
  *******************************************************************************/
 package com.ibm.ws.logging.data;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 import com.ibm.ws.logging.collector.LogFieldConstants;
@@ -36,7 +37,17 @@ public class AccessLogData extends GenericData {
                                               LogFieldConstants.HOST,
                                               LogFieldConstants.IBM_USERDIR,
                                               LogFieldConstants.IBM_SERVERNAME,
-                                              LogFieldConstants.TYPE
+                                              LogFieldConstants.TYPE,
+                                              LogFieldConstants.IBM_REMOTEIP,
+                                              LogFieldConstants.IBM_BYTESSENT,
+                                              LogFieldConstants.IBM_COOKIE,
+                                              LogFieldConstants.IBM_REQUESTELAPSEDTIME,
+                                              LogFieldConstants.IBM_REQUESTHEADER,
+                                              LogFieldConstants.IBM_RESPONSEHEADER,
+                                              LogFieldConstants.IBM_REQUESTFIRSTLINE,
+                                              LogFieldConstants.IBM_ACCESSLOGDATETIME,
+                                              LogFieldConstants.IBM_REMOTEUSERID
+
     };
 
     private final static String[] NAMES = {
@@ -53,10 +64,40 @@ public class AccessLogData extends GenericData {
                                             LogFieldConstants.RESPONSECODE,
                                             LogFieldConstants.ELAPSEDTIME,
                                             LogFieldConstants.DATETIME,
-                                            LogFieldConstants.SEQUENCE
+                                            LogFieldConstants.SEQUENCE,
+                                            LogFieldConstants.REMOTEIP,
+                                            LogFieldConstants.BYTESSENT,
+                                            LogFieldConstants.COOKIE,
+                                            LogFieldConstants.REQUESTELAPSEDTIME,
+                                            LogFieldConstants.REQUESTHEADER,
+                                            LogFieldConstants.RESPONSEHEADER,
+                                            LogFieldConstants.REQUESTFIRSTLINE,
+                                            LogFieldConstants.ACCESSLOGDATETIME,
+                                            LogFieldConstants.REMOTEUSERID
     };
 
     private static NameAliases jsonLoggingNameAliases = new NameAliases(NAMES1_1);
+    private static boolean[] omitFieldsArray = new boolean[28];
+
+    public static String isCustomAccessLogToJSONEnabled = "";
+    public static String isCustomAccessLogToJSONEnabledCollector = "";
+    public boolean[] formatSpecifiers = new boolean[NAMES1_1.length];
+    public AccessLogDataFormatter[] formatters = new AccessLogDataFormatter[4];
+    KeyValuePairList kvplCookies = new KeyValuePairList("cookies");
+    KeyValuePairList kvplRequestHeaders = new KeyValuePairList("requestHeaders");
+    KeyValuePairList kvplResponseHeaders = new KeyValuePairList("responseHeaders");
+
+    public void addFormatters(AccessLogDataFormatter[] formatters) {
+        this.formatters = formatters;
+    }
+
+    public AccessLogDataFormatter[] getFormatters() {
+        return this.formatters;
+    }
+
+    public boolean[] getFormatSpecifierList() {
+        return formatSpecifiers;
+    }
 
     public static void newJsonLoggingNameAliases(Map<String, String> newAliases) {
         jsonLoggingNameAliases.newAliases(newAliases);
@@ -67,7 +108,7 @@ public class AccessLogData extends GenericData {
     }
 
     public AccessLogData() {
-        super(14);
+        super(24);
     }
 
     private void setPair(int index, String s) {
@@ -82,64 +123,237 @@ public class AccessLogData extends GenericData {
         setPair(index, NAMES1_1[index], l);
     }
 
-    public void setRequestStartTime(long l) {
-        setPair(0, l);
+    public void setRequestStartTime(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%t")) {
+            setRequestStartTime(s);
+            this.formatSpecifiers[0] = true;
+        }
+    }
+
+    public void setRequestStartTime(String s) {
+        setPair(0, s);
+    }
+
+    public void setUriPath(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%U")) {
+            setUriPath(s);
+            this.formatSpecifiers[1] = true;
+        }
     }
 
     public void setUriPath(String s) {
         setPair(1, s);
     }
 
+    public void setRequestMethod(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%m")) {
+            setRequestMethod(s);
+            this.formatSpecifiers[2] = true;
+        }
+    }
+
     public void setRequestMethod(String s) {
         setPair(2, s);
+    }
+
+    public void setQueryString(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%q")) {
+            setQueryString(s);
+            this.formatSpecifiers[3] = true;
+        }
     }
 
     public void setQueryString(String s) {
         setPair(3, s);
     }
 
+    public void setRequestHost(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%A")) {
+            setRequestHost(s);
+            this.formatSpecifiers[4] = true;
+        }
+    }
+
     public void setRequestHost(String s) {
         setPair(4, s);
+    }
+
+    public void setRequestPort(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%p")) {
+            setRequestPort(s);
+            this.formatSpecifiers[5] = true;
+        }
     }
 
     public void setRequestPort(String s) {
         setPair(5, s);
     }
 
+    public void setRemoteHost(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%h")) {
+            setRemoteHost(s);
+            this.formatSpecifiers[6] = true;
+        }
+    }
+
     public void setRemoteHost(String s) {
         setPair(6, s);
+    }
+
+    public void setUserAgent(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%i")) {
+            setUserAgent(s);
+            this.formatSpecifiers[7] = true;
+        }
     }
 
     public void setUserAgent(String s) {
         setPair(7, s);
     }
 
+    public void setRequestProtocol(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%H")) {
+            setRequestProtocol(s);
+            this.formatSpecifiers[8] = true;
+        }
+    }
+
     public void setRequestProtocol(String s) {
         setPair(8, s);
+    }
+
+    public void setBytesReceived(long l, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%B")) {
+            setBytesReceived(l);
+            this.formatSpecifiers[9] = true;
+        }
     }
 
     public void setBytesReceived(long l) {
         setPair(9, l);
     }
 
+    public void setResponseCode(int i, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%s")) {
+            setResponseCode(i);
+            this.formatSpecifiers[10] = true;
+        }
+    }
+
     public void setResponseCode(int i) {
         setPair(10, i);
+    }
+
+    public void setElapsedTime(long l, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%{R}W")) {
+            setElapsedTime(l);
+            this.formatSpecifiers[11] = true;
+        }
     }
 
     public void setElapsedTime(long l) {
         setPair(11, l);
     }
 
+    // Datetime also not part of logFormat
     public void setDatetime(long l) {
         setPair(12, l);
     }
 
+    // Sequence also not part of logFormat
     public void setSequence(String s) {
         setPair(13, s);
     }
 
-    public long getRequestStartTime() {
-        return getLongValue(0);
+    // LG-265
+    public void setRemoteIP(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%a")) {
+            setRemoteIP(s);
+            this.formatSpecifiers[14] = true;
+        }
+    }
+
+    public void setRemoteIP(String s) {
+        setPair(14, s);
+    }
+
+    public void setBytesSent(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%b")) {
+            setBytesSent(s);
+            this.formatSpecifiers[15] = true;
+        }
+    }
+
+    public void setBytesSent(String s) {
+        setPair(15, s);
+    }
+
+    public void setCookies(String name, String value) {
+        kvplCookies.addKeyValuePair(name, value);
+        setPair(16, kvplCookies);
+        this.formatSpecifiers[16] = true;
+    }
+
+    public void setRequestElapsedTime(long l, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%D")) {
+            setRequestElapsedTime(l);
+            this.formatSpecifiers[17] = true;
+        }
+    }
+
+    public void setRequestElapsedTime(long l) {
+        setPair(17, l);
+    }
+
+    public void setRequestHeader(String name, String value) {
+        kvplRequestHeaders.addKeyValuePair(name, value);
+        setPair(18, kvplRequestHeaders);
+        this.formatSpecifiers[18] = true;
+    }
+
+    public void setResponseHeader(String name, String value) {
+        kvplResponseHeaders.addKeyValuePair(name, value);
+        setPair(19, kvplResponseHeaders);
+        this.formatSpecifiers[19] = true;
+    }
+
+    public void setRequestFirstLine(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%r")) {
+            setRequestFirstLine(s);
+            this.formatSpecifiers[20] = true;
+        }
+    }
+
+    public void setRequestFirstLine(String s) {
+        setPair(20, s);
+    }
+
+    public void setAccessLogDatetime(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%{t}W")) {
+            setAccessLogDatetime(s);
+            this.formatSpecifiers[21] = true;
+        }
+    }
+
+    public void setAccessLogDatetime(String s) {
+        setPair(21, s);
+    }
+
+    public void setRemoteUser(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%u")) {
+            setRemoteUser(s);
+            this.formatSpecifiers[22] = true;
+        }
+    }
+
+    public void setRemoteUser(String s) {
+        setPair(22, s);
+    }
+
+    // END LG-265
+
+    public String getRequestStartTime() {
+        return getStringValue(0);
     }
 
     public String getUriPath() {
@@ -175,23 +389,88 @@ public class AccessLogData extends GenericData {
     }
 
     public long getBytesReceived() {
-        return getLongValue(9);
+        try {
+            return getLongValue(9);
+        } catch (Exception e) {
+            // Do nothing, the field hasn't been set in the logFormat
+        }
+        return -1;
     }
 
     public int getResponseCode() {
-        return getIntValue(10);
+        try {
+            return getIntValue(10);
+        } catch (Exception e) {
+            // Do nothing, the field hasn't been set in the logFormat
+        }
+        return -1;
     }
 
     public long getElapsedTime() {
-        return getLongValue(11);
+        try {
+            return getLongValue(11);
+        } catch (Exception e) {
+            // Do nothing, the field hasn't been set in the logFormat
+        }
+        return -1;
     }
 
     public long getDatetime() {
-        return getLongValue(12);
+        try {
+            return getLongValue(12);
+        } catch (Exception e) {
+            // Do nothing, the field hasn't been set in the logFormat
+        }
+        return -1;
     }
 
     public String getSequence() {
         return getStringValue(13);
+    }
+
+    public String getRemoteIP() {
+        return getStringValue(14);
+    }
+
+    public String getBytesSent() {
+        return getStringValue(15);
+    }
+
+    public KeyValuePairList getCookies() {
+        return getValues(16);
+    }
+
+    public long getRequestElapsedTime() {
+        try {
+            return getLongValue(17);
+        } catch (Exception e) {
+            // Do nothing, the field hasn't been set in the logFormat
+        }
+        return -1;
+    }
+
+    public KeyValuePairList getRequestHeaders() {
+        return getValues(18);
+    }
+
+    public KeyValuePairList getResponseHeaders() {
+        return getValues(19);
+    }
+
+    public String getRequestFirstLine() {
+        return getStringValue(20);
+    }
+
+    public String getAccessLogDatetime() {
+        return getStringValue(21);
+    }
+
+    public String getRemoteUser() {
+        return getStringValue(22);
+    }
+
+    private KeyValuePairList getValues(int index) {
+        return (KeyValuePairList) getPairs()[index];
     }
 
     public String getRequestStartTimeKey() {
@@ -250,6 +529,44 @@ public class AccessLogData extends GenericData {
         return NAMES[13];
     }
 
+    // LG 265
+    public String getRemoteIPKey() {
+        return NAMES[14];
+    }
+
+    public String getBytesSentKey() {
+        return NAMES[15];
+    }
+
+    public String getCookieKey(KeyValuePair kvp) {
+        return NAMES[16] + "_" + kvp.getKey();
+    }
+
+    public String getRequestElapsedTimeKey() {
+        return NAMES[17];
+    }
+
+    public String getRequestHeaderKey(KeyValuePair kvp) {
+        return NAMES[18] + "_" + kvp.getKey();
+    }
+
+    public String getResponseHeaderKey(KeyValuePair kvp) {
+        return NAMES[19] + "_" + kvp.getKey();
+    }
+
+    public String getRequestFirstLineKey() {
+        return NAMES[20];
+    }
+
+    public String getAccessLogDatetimeKey() {
+        return NAMES[21];
+    }
+
+    public String getRemoteUserKey() {
+        return NAMES[22];
+    }
+    // LG 265
+
     public String getRequestStartTimeKey1_1() {
         return NAMES1_1[0];
     }
@@ -307,6 +624,7 @@ public class AccessLogData extends GenericData {
     }
 
     //name aliases
+
     public static String getRequestStartTimeKeyJSON() {
         return jsonLoggingNameAliases.aliases[0];
     }
@@ -379,4 +697,41 @@ public class AccessLogData extends GenericData {
         return jsonLoggingNameAliases.aliases[17];
     }
 
+    // LG-265
+    public static String getRemoteIPKeyJSON() {
+        return jsonLoggingNameAliases.aliases[18];
+    }
+
+    public static String getBytesSentKeyJSON() {
+        return jsonLoggingNameAliases.aliases[19];
+    }
+
+    public static String getCookieKeyJSON(KeyValuePair kvp) {
+        return jsonLoggingNameAliases.aliases[20] + "_" + kvp.getKey();
+    }
+
+    public static String getRequestElapsedTimeKeyJSON() {
+        return jsonLoggingNameAliases.aliases[21];
+    }
+
+    public static String getRequestHeaderKeyJSON(KeyValuePair kvp) {
+        return jsonLoggingNameAliases.aliases[22] + "_" + kvp.getKey();
+    }
+
+    public static String getResponseHeaderKeyJSON(KeyValuePair kvp) {
+        return jsonLoggingNameAliases.aliases[23] + "_" + kvp.getKey();
+    }
+
+    public static String getRequestFirstLineKeyJSON() {
+        return jsonLoggingNameAliases.aliases[24];
+    }
+
+    public static String getAccessLogDatetimeKeyJSON() {
+        return jsonLoggingNameAliases.aliases[25];
+    }
+
+    public static String getRemoteUserKeyJSON() {
+        return jsonLoggingNameAliases.aliases[26];
+    }
+    // END LG-265
 }

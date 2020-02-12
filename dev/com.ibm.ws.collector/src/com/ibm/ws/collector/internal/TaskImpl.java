@@ -156,7 +156,7 @@ public class TaskImpl extends Task implements Runnable {
         /**
          * Initialize the maximum number of events going through at windowDuration ms
          *
-         * @param maxEvents maximum number of events specified
+         * @param maxEvents      maximum number of events specified
          * @param windowDuration the window time frame in milliseconds for the number of maxEvents specified
          */
         public Throttler(int maxEvents, long windowDuration) {
