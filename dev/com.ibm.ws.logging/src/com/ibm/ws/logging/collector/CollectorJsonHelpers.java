@@ -93,6 +93,14 @@ public class CollectorJsonHelpers {
         }
     };
 
+    // Only the jsonifyAccess function uses this variant
+    protected static boolean addToJSON(StringBuilder sb, String name, String value, boolean jsonEscapeName,
+                                       boolean jsonEscapeValue, boolean trim, boolean isFirstField, boolean isQuoteless, boolean isPartOfLogFormat) {
+        if (isPartOfLogFormat && value != null)
+            return (addToJSON(sb, name, value, jsonEscapeName, jsonEscapeValue, trim, isFirstField, isQuoteless));
+        return false;
+    }
+
     protected static boolean addToJSON(StringBuilder sb, String name, String value, boolean jsonEscapeName,
                                        boolean jsonEscapeValue, boolean trim, boolean isFirstField) {
 
@@ -158,7 +166,7 @@ public class CollectorJsonHelpers {
      * Escape \b, \f, \n, \r, \t, ", \, / characters and appends to a string builder
      *
      * @param sb String builder to append to
-     * @param s String to escape
+     * @param s  String to escape
      */
     protected static void jsonEscape3(StringBuilder sb, String s) {
         for (int i = 0; i < s.length(); i++) {

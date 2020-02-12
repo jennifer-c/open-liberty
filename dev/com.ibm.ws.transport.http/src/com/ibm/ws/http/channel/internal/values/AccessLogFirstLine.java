@@ -31,10 +31,10 @@ public class AccessLogFirstLine extends AccessLogData {
         String requestVersion = null;
 
         if (request != null) {
-            requestMethod = request.getMethod();
-            requestURI = request.getRequestURI();
-            requestQueryString = request.getQueryString();
-            requestVersion = request.getVersion();
+            requestMethod = (request == null) ? null : request.getMethod();
+            requestURI = (request == null) ? null : request.getRequestURI();
+            requestQueryString = (request == null) ? null : request.getQueryString();
+            requestVersion = (request == null) ? null : request.getVersion();
         }
 
         logSafe(accessLogEntry, requestMethod);
@@ -51,4 +51,26 @@ public class AccessLogFirstLine extends AccessLogData {
 
         return true;
     }
+
+    public static String getFirstLineAsString(HttpResponseMessage response, HttpRequestMessage request, Object data) {
+        if (request != null) {
+            StringBuilder sb = new StringBuilder();
+            String requestMethod = (request == null) ? null : request.getMethod();
+            String requestURI = (request == null) ? null : request.getRequestURI();
+            String requestQueryString = (request == null) ? null : request.getQueryString();
+            String requestVersion = (request == null) ? null : request.getVersion();
+            sb.append(requestMethod);
+            sb.append(" ");
+            sb.append(requestURI);
+            if (requestQueryString != null) {
+                sb.append("?");
+                sb.append(GenericUtils.nullOutPasswords(requestQueryString, (byte) '&'));
+            }
+            sb.append(" ");
+            sb.append(requestVersion);
+            return sb.toString();
+        }
+        return null;
+    }
+
 }
