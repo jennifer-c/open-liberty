@@ -111,6 +111,9 @@ public class LogProviderConfigImpl implements LogProviderConfig {
     /** Boolean to check if omission of jsonFields is allowed (for beta) */
     protected volatile Boolean omitJsonFields = false;
 
+    /** Boolean to check if access log format fields should be followed */
+    protected volatile boolean enableCustomAccessLogFields = false;
+
     /** List of sources to route to console.log / console */
     protected volatile Collection<String> consoleSource = Arrays.asList(LoggingConstants.DEFAULT_CONSOLE_SOURCE);
 
@@ -161,6 +164,9 @@ public class LogProviderConfigImpl implements LogProviderConfig {
         //beta for omitting json field mappings
         omitJsonFields = LoggingConfigUtils.getBooleanValue(LoggingConfigUtils.getEnvValue(LoggingConstants.ENV_WLP_LOGGING_OMIT_JSON_FIELD_MAPPINGS),
                                                             omitJsonFields);
+
+        enableCustomAccessLogFields = LoggingConfigUtils.getBooleanValue(LoggingConfigUtils.getEnvValue(LoggingConstants.ENV_WLP_LOGGING_JSON_ENABLE_CUSTOM_ACCESS_LOG_FIELDS),
+                                                                         enableCustomAccessLogFields);
 
         consoleSource = LoggingConfigUtils.parseStringCollection("consoleSource",
                                                                  LoggingConfigUtils.getEnvValue(LoggingConstants.ENV_WLP_LOGGING_CONSOLE_SOURCE),
@@ -242,6 +248,8 @@ public class LogProviderConfigImpl implements LogProviderConfig {
         consoleFormat = InitConfgAttribute.CONSOLE_FORMAT.getStringValueAndSaveInit(c, consoleFormat, isInit);
 
         jsonFields = InitConfgAttribute.JSON_FIELD_MAPPINGS.getStringValueAndSaveInit(c, jsonFields, isInit);
+
+        enableCustomAccessLogFields = InitConfgAttribute.JSON_ENABLE_CUSTOM_ACCESS_LOG_FIELDS.getBooleanValueAndSaveInit(c, enableCustomAccessLogFields, isInit);
 
         newLogsOnStart = InitConfgAttribute.NEW_LOGS_ON_START.getBooleanValue(c, newLogsOnStart, isInit);
     }
@@ -411,6 +419,10 @@ public class LogProviderConfigImpl implements LogProviderConfig {
         return omitJsonFields;
     }
 
+    public boolean getEnableCustomAccessLogFields() {
+        return enableCustomAccessLogFields;
+    }
+
     public Collection<String> getConsoleSource() {
         return consoleSource;
     }
@@ -469,6 +481,9 @@ public class LogProviderConfigImpl implements LogProviderConfig {
         CONSOLE_SOURCE("consoleSource", "com.ibm.ws.logging.console.source"),
         CONSOLE_FORMAT("consoleFormat", "com.ibm.ws.logging.console.format"),
         JSON_FIELD_MAPPINGS("jsonFieldMappings", "com.ibm.ws.logging.json.field.mappings"),
+
+        JSON_ENABLE_CUSTOM_ACCESS_LOG_FIELDS("enableCustomAccessLogFields", "com.ibm.ws.logging.json.enable.custom.access.log.fields"),
+
         NEW_LOGS_ON_START("newLogsOnStart", FileLogHolder.NEW_LOGS_ON_START_PROPERTY);
 
         final String configKey;
@@ -522,6 +537,17 @@ public class LogProviderConfigImpl implements LogProviderConfig {
             }
             return newValue;
         }
+
+//        // LG 265
+        Boolean getBooleanValueAndSaveInit(Map<String, Object> config, boolean defaultValue, boolean isInit) {
+            Object value = config.get(isInit ? propertyKey : configKey);
+            Boolean newValue = LoggingConfigUtils.getBooleanValue(value, defaultValue);
+            if (isInit && value == null) {
+                config.put(propertyKey, newValue.toString());
+            }
+            return newValue;
+        }
+//        // LG 265
 
         /**
          * Gets a collection from the config. During initializing, the property value is set

@@ -10,9 +10,11 @@
  *******************************************************************************/
 package com.ibm.wsspi.http.logging;
 
+import com.ibm.ws.logging.data.AccessLogExtraData;
+
 /**
  * The Access log forwarder is invoked after each http request.
  */
 public interface AccessLogForwarder {
-    public void process(AccessLogRecordData logData);
+    public void process(AccessLogRecordData logData, AccessLogExtraData extraLogData);
 }
