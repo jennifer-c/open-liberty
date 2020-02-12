@@ -40,14 +40,14 @@ public class CollectorJsonUtils {
      * Method to return log event data in json format. If the collector version passed is greater than 1.0
      * then the jsonifyEvent call is passed to another version of CollectorJsonUtils.
      *
-     * @param event The object originating from logging source which contains necessary fields
-     * @param eventType The type of event
-     * @param servername The name of the server
-     * @param wlpUserDir The name of wlp user directory
-     * @param serverHostName The name of server host
+     * @param event            The object originating from logging source which contains necessary fields
+     * @param eventType        The type of event
+     * @param servername       The name of the server
+     * @param wlpUserDir       The name of wlp user directory
+     * @param serverHostName   The name of server host
      * @param collectorVersion The version number
-     * @param tags An array of tags
-     * @param maxFieldLength The max character length of strings
+     * @param tags             An array of tags
+     * @param maxFieldLength   The max character length of strings
      */
     public static String jsonifyEvent(Object event, String eventType, String serverName, String wlpUserDir, String serverHostName, String collectorVersion, String[] tags,
                                       int maxFieldLength) {
@@ -255,6 +255,89 @@ public class CollectorJsonUtils {
         CollectorJsonHelpers.addToJSON(sb, accessLogData.getDatetimeKey(), datetime, false, true, false, false, false);
 
         CollectorJsonHelpers.addToJSON(sb, accessLogData.getSequenceKey(), accessLogData.getSequence(), false, true, false, false, false);
+
+        // LG-265
+        if (AccessLogData.isCustomAccessLogToJSONEnabled) {
+            // %a
+            if (accessLogData.getRemoteIP() != null)
+                CollectorJsonHelpers.addToJSON(sb, AccessLogData.getRemoteIPKeyJSON(), accessLogData.getRemoteIP(), AccessLogData.getSequenceOmitBoolJSON(), false, true, false,
+                                               !(sb.length() > 1),
+                                               false);
+            // %b
+            if (accessLogData.getBytesReceivedFormatted() != null)
+                CollectorJsonHelpers.addToJSON(sb, AccessLogData.getBytesReceivedFormattedKeyJSON(), accessLogData.getBytesReceivedFormatted(),
+                                               AccessLogData.getSequenceOmitBoolJSON(),
+                                               false, true, false,
+                                               !(sb.length() > 1),
+                                               false);
+            // %C
+            ArrayList<KeyValuePair> cookies = null;
+            KeyValuePairList kvplCookies = accessLogData.getCookies();
+            if (kvplCookies != null) {
+                cookies = kvplCookies.getList();
+                for (KeyValuePair k : cookies) {
+                    CollectorJsonHelpers.addToJSON(sb, AccessLogData.getCookieKeyJSON(k), k.getStringValue(),
+                                                   AccessLogData.getSequenceOmitBoolJSON(), true, true, false, !(sb.length() > 1),
+                                                   false);
+                }
+            }
+
+            // %D
+            if (accessLogData.getRequestElapsedTime() > 0)
+                CollectorJsonHelpers.addToJSON(sb, AccessLogData.getRequestElapsedTimeKeyJSON(), Long.toString(accessLogData.getRequestElapsedTime()),
+                                               AccessLogData.getSequenceOmitBoolJSON(), false,
+                                               true, false,
+                                               !(sb.length() > 1),
+                                               true);
+            // %i
+            ArrayList<KeyValuePair> requestHeaders = null;
+            KeyValuePairList kvplRequestHeaders = accessLogData.getRequestHeaders();
+            if (kvplRequestHeaders != null) {
+                requestHeaders = kvplRequestHeaders.getList();
+                for (KeyValuePair k : requestHeaders) {
+                    CollectorJsonHelpers.addToJSON(sb, AccessLogData.getRequestHeaderKeyJSON(k), k.getStringValue(),
+                                                   AccessLogData.getSequenceOmitBoolJSON(), true, true, false, !(sb.length() > 1),
+                                                   false);
+                }
+            }
+            // %o
+            ArrayList<KeyValuePair> responseHeaders = null;
+            KeyValuePairList kvplResponseHeaders = accessLogData.getResponseHeaders();
+            if (kvplResponseHeaders != null) {
+                responseHeaders = kvplResponseHeaders.getList();
+                for (KeyValuePair k : responseHeaders) {
+                    CollectorJsonHelpers.addToJSON(sb, AccessLogData.getResponseHeaderKeyJSON(k), k.getStringValue(),
+                                                   AccessLogData.getSequenceOmitBoolJSON(), true, true, false, !(sb.length() > 1),
+                                                   false);
+                }
+            }
+            // %r
+            if (accessLogData.getRequestFirstLine() != null)
+                CollectorJsonHelpers.addToJSON(sb, AccessLogData.getRequestFirstLineKeyJSON(), accessLogData.getRequestFirstLine(), AccessLogData.getSequenceOmitBoolJSON(), false,
+                                               true, false,
+                                               !(sb.length() > 1),
+                                               false);
+            // %t
+            if (accessLogData.getRequestStartTime() != null)
+                CollectorJsonHelpers.addToJSON(sb, AccessLogData.getRequestStartTimeKeyJSON(), accessLogData.getRequestStartTime(), AccessLogData.getSequenceOmitBoolJSON(), false,
+                                               true, false,
+                                               !(sb.length() > 1),
+                                               false);
+            // %{t}W
+            if (accessLogData.getAccessLogDatetime() != null)
+                CollectorJsonHelpers.addToJSON(sb, AccessLogData.getAccessLogDatetimeKeyJSON(), accessLogData.getAccessLogDatetime(), AccessLogData.getSequenceOmitBoolJSON(),
+                                               false,
+                                               true,
+                                               false,
+                                               !(sb.length() > 1),
+                                               false);
+            // %u
+            if (accessLogData.getRemoteUser() != null)
+                CollectorJsonHelpers.addToJSON(sb, AccessLogData.getRemoteUserKeyJSON(), accessLogData.getRemoteUser(), AccessLogData.getSequenceOmitBoolJSON(), false, true, false,
+                                               !(sb.length() > 1),
+                                               false);
+        }
+        // END LG-265
 
         if (tags != null) {
             addTagNameForVersion(sb).append(CollectorJsonHelpers.jsonifyTags(tags));

@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
 import com.ibm.ws.logging.data.AccessLogData;
+import com.ibm.ws.logging.data.AccessLogExtraData;
 import com.ibm.wsspi.collector.manager.BufferManager;
 import com.ibm.wsspi.collector.manager.Source;
 import com.ibm.wsspi.http.channel.HttpRequestMessage;
@@ -105,7 +106,7 @@ public class AccessLogSource implements Source {
 
         /** {@inheritDoc} */
         @Override
-        public void process(AccessLogRecordData recordData) {
+        public void process(AccessLogRecordData recordData, AccessLogExtraData extraData) {
             HttpRequestMessage request = recordData.getRequest();
             HttpResponseMessage response = recordData.getResponse();
 
@@ -127,6 +128,29 @@ public class AccessLogSource implements Source {
                 accessLogData.setResponseCode(response.getStatusCodeAsInt());
                 accessLogData.setElapsedTime(recordData.getElapsedTime());
                 accessLogData.setDatetime(recordData.getTimestamp());
+
+                // LG 265
+                if (extraData.isSet("remoteIP"))
+                    accessLogData.setRemoteIP(extraData.getRemoteIP());
+                if (extraData.isSet("bytesReceivedFormatted"))
+                    accessLogData.setBytesReceivedFormatted(extraData.getBytesReceivedFormatted());
+                if (extraData.isSet("cookies"))
+                    accessLogData.setCookies(extraData.getCookies());
+                if (extraData.isSet("requestElapsedTime"))
+                    accessLogData.setRequestElapsedTime(extraData.getRequestElapsedTime());
+                if (extraData.isSet("requestHeaders"))
+                    accessLogData.setRequestHeader(extraData.getRequestHeaders());
+                if (extraData.isSet("responseHeaders"))
+                    accessLogData.setResponseHeader(extraData.getResponseHeaders());
+                if (extraData.isSet("requestFirstLine"))
+                    accessLogData.setRequestFirstLine(extraData.getRequestFirstLine());
+                if (extraData.isSet("requestStartTime"))
+                    accessLogData.setRequestStartTime(extraData.getRequestStartTime());
+                if (extraData.isSet("accessLogDatetime"))
+                    accessLogData.setAccessLogDatetime(extraData.getAccessLogDatetime());
+                if (extraData.isSet("remoteUserID"))
+                    accessLogData.setRemoteUser(extraData.getRemoteUser());
+                // LG 265 end
 
                 String sequenceVal = requestStartTimeVal + "_" + String.format("%013X", seq.incrementAndGet());
                 accessLogData.setSequence(sequenceVal);

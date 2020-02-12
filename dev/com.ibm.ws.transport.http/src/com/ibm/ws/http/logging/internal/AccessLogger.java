@@ -31,15 +31,26 @@ import com.ibm.websphere.ras.annotation.Trivial;
 import com.ibm.ws.ffdc.FFDCFilter;
 import com.ibm.ws.genericbnf.internal.GenericUtils;
 import com.ibm.ws.http.channel.internal.HttpMessages;
+import com.ibm.ws.http.channel.internal.values.AccessLogCurrentTime;
 import com.ibm.ws.http.channel.internal.values.AccessLogData;
 import com.ibm.ws.http.channel.internal.values.AccessLogElapsedRequestTime;
+import com.ibm.ws.http.channel.internal.values.AccessLogElapsedTime;
+import com.ibm.ws.http.channel.internal.values.AccessLogFirstLine;
 import com.ibm.ws.http.channel.internal.values.AccessLogLocalIP;
 import com.ibm.ws.http.channel.internal.values.AccessLogLocalPort;
+import com.ibm.ws.http.channel.internal.values.AccessLogRemoteIP;
+import com.ibm.ws.http.channel.internal.values.AccessLogRemoteUser;
+import com.ibm.ws.http.channel.internal.values.AccessLogRequestCookie;
+import com.ibm.ws.http.channel.internal.values.AccessLogRequestHeaderValue;
+import com.ibm.ws.http.channel.internal.values.AccessLogResponseHeaderValue;
+import com.ibm.ws.http.channel.internal.values.AccessLogResponseSize;
 import com.ibm.ws.http.channel.internal.values.AccessLogStartTime;
 import com.ibm.ws.http.dispatcher.internal.HttpDispatcher;
+import com.ibm.ws.logging.data.AccessLogExtraData;
 import com.ibm.wsspi.bytebuffer.WsByteBuffer;
 import com.ibm.wsspi.genericbnf.HeaderField;
 import com.ibm.wsspi.genericbnf.HeaderStorage;
+import com.ibm.wsspi.http.HttpCookie;
 import com.ibm.wsspi.http.channel.HttpChannelUtils;
 import com.ibm.wsspi.http.channel.HttpRequestMessage;
 import com.ibm.wsspi.http.channel.HttpResponseMessage;
@@ -52,7 +63,7 @@ import com.ibm.wsspi.http.logging.LogForwarderManager;
 /**
  * Implementation of an NCSA access log file. This will perform the disk IO on
  * a background thread, not on the caller's thread.
- * 
+ *
  */
 @Component(configurationPid = "com.ibm.ws.http.log.access", configurationPolicy = ConfigurationPolicy.REQUIRE, immediate = true, service = AccessLogger.class,
            property = { "service.vendor=IBM" })
@@ -110,7 +121,7 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
 
     /**
      * Constructor of this NCSA access log file.
-     * 
+     *
      * @param filename
      * @throws FileNotFoundException
      */
@@ -205,7 +216,7 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
 
     /**
      * Get the access log format that is the string format
-     * 
+     *
      * @return String
      */
     @Trivial
@@ -227,7 +238,7 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
 
     /**
      * Set the access log format to a String
-     * 
+     *
      * @param format
      */
     @Trivial
@@ -345,8 +356,7 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
             matchString.append(ch);
             accessLogData = AccessLogData.match(matchString.toString(), 0,
                                                 matchString.length());
-        }
-        else {
+        } else {
             // match against %ch
             byte[] bs = new byte[] { '%', (byte) ch };
             accessLogData = AccessLogData.match(bs, 0, bs.length);
@@ -373,6 +383,7 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
         if (!isStarted()) {
             return;
         }
+        AccessLogExtraData extraData = new AccessLogExtraData(); // LG 265 TESTING
         try {
             StringBuilder accessLogLine;
             if (parsedFormat != null) {
@@ -383,6 +394,41 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
                     }
                     if (s.log != null) {
                         s.log.set(accessLogLine, response, request, s.data);
+                        // LG 265 start
+                        String formatSpecifier = s.log.getName();
+                        accessLogLine.append(formatSpecifier);
+                        if (formatSpecifier.equals("%a")) {
+                            extraData.setRemoteIP(AccessLogRemoteIP.getRemoteIP(response, request, s.data));
+                        } else if (formatSpecifier.equals("%b")) {
+                            extraData.setBytesReceivedFormatted(AccessLogResponseSize.getResponseSizeAsString(response, request, s.data));
+                        } else if (formatSpecifier.equals("%C")) {
+                            if (s.data != null) {
+                                HttpCookie c = AccessLogRequestCookie.getCookie(response, request, s.data);
+                                extraData.setCookie(c.getName(), c.getValue());
+                            } else {
+                                // If data is null, they specified %C without a cookie name, which returns all cookies
+                                List<HttpCookie> cookies = AccessLogRequestCookie.getAllCookies(response, request, null);
+                                for (HttpCookie c : cookies) {
+                                    extraData.setCookie(c.getName(), c.getValue());
+                                }
+                            }
+                        } else if (formatSpecifier.equals("%D")) {
+                            extraData.setRequestElapsedTime(AccessLogElapsedTime.getElapsedTime(response, request, s.data));
+                        } else if (formatSpecifier.equals("%i")) {
+                            if (s.data != null)
+                                extraData.setRequestHeader((String) s.data, AccessLogRequestHeaderValue.getHeaderValue(response, request, s.data));
+                        } else if (formatSpecifier.matches("%o")) {
+                            if (s.data != null)
+                                extraData.setResponseHeader((String) s.data, AccessLogResponseHeaderValue.getHeaderValue(response, request, s.data));
+                        } else if (formatSpecifier.equals("%r")) {
+                            extraData.setRequestFirstLine(AccessLogFirstLine.getFirstLineAsString(response, request, s.data));
+                        } else if (formatSpecifier.equals("%t")) {
+                            extraData.setRequestStartTime(AccessLogStartTime.getStartTimeAsString(response, request, s.data));
+                        } else if (formatSpecifier.equals("%{t}W")) {
+                            extraData.setAccessLogDatetime(AccessLogCurrentTime.getAccessLogCurrentTimeAsString(response, request, s.data));
+                        } else if (formatSpecifier.equals("%u")) {
+                            extraData.setRemoteUser(AccessLogRemoteUser.getRemoteUser(response, request, s.data));
+                        }
                     }
                 }
             } else {
@@ -458,7 +504,7 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
                 AccessLogRecordData recordData = toAccessLogRecordData(request, response, version, userId, remoteAddr, numBytes);
                 for (AccessLogForwarder forwarder : LogForwarderManager.getAccessLogForwarders()) {
                     try {
-                        forwarder.process(recordData);
+                        forwarder.process(recordData, extraData);
                     } catch (Throwable t) {
                         FFDCFilter.processException(t, getClass().getName() + ".log", "136", this);
                         if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {
@@ -468,8 +514,7 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
                 } // end-for
             }
 
-            WsByteBuffer wsbb =
-                            HttpDispatcher.getBufferManager().allocate(accessLogLine.length());
+            WsByteBuffer wsbb = HttpDispatcher.getBufferManager().allocate(accessLogLine.length());
             wsbb.put(HttpChannelUtils.getBytes(accessLogLine));
             wsbb.flip();
             super.log(wsbb);
@@ -502,6 +547,9 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
         final long elapsedTime;
         final String localIP;
         final String localPort;
+        final String remoteIP;
+        final long bytesReceivedFormatted;
+        //final String remoteUser;
 
         // ** timestamp
         timestamp = System.currentTimeMillis();
@@ -517,6 +565,23 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
 
         // ** LocalPort
         localPort = AccessLogLocalPort.getLocalPort(response2, request2, null);
+
+        // LG 265
+
+//        // ** RemoteIP
+//        remoteIP = AccessLogRemoteIP.getRemoteIP(response2, request2, null);
+//
+//        // ** Bytes Received
+//        bytesReceivedFormatted = AccessLogResponseSize.getResponseSize(response2, request2, null);
+
+        // ** Cookie
+        //HttpCookie cookie1 = AccessLogRequestCookie.getCookie(response2, request2, null);
+        //cookie = cookie1.getName() + ":" + cookie1.getValue();
+
+        // ** RemoteUser
+        //remoteUser = AccessLogRemoteUser.getRemoteUser(response2, request2, null);
+
+        // LG 265 end
 
         // ** AccessLogRecordData
         AccessLogRecordData recordData = new AccessLogRecordData() {
@@ -575,6 +640,27 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
             public String getLocalPort() {
                 return localPort;
             }
+
+            // LG 265
+//            @Override
+//            public String getRemoteIP() {
+//                return remoteIP;
+//            }
+//
+//            @Override
+//            public long getBytesReceivedFormatted() {
+//                return bytesReceivedFormatted;
+//            }
+
+//            @Override
+//            public String getCookie() {
+//                return cookie;
+//            }
+//            @Override
+//            public String getRemoteUser() {
+//                return remoteUser;
+//            }
+            // End LG 265
         };
         return recordData;
     }
@@ -588,8 +674,7 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
             return;
         }
         try {
-            WsByteBuffer wsbb =
-                            HttpDispatcher.getBufferManager().allocate(message.length + 2);
+            WsByteBuffer wsbb = HttpDispatcher.getBufferManager().allocate(message.length + 2);
             wsbb.put(message);
             wsbb.flip();
             super.log(wsbb);
@@ -613,7 +698,7 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
 
     /**
      * Return the string representation of this file.
-     * 
+     *
      * @return String
      */
     @Override

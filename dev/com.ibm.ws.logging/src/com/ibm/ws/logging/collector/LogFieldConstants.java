@@ -76,6 +76,16 @@ public class LogFieldConstants {
     public static final String RESPONSECODE = "responseCode";
     public static final String IBM_ELAPSEDTIME = "ibm_elapsedTime";
     public static final String ELAPSEDTIME = "elapsedTime";
+    // LG-265 new fields
+    public static final String IBM_REMOTEIP = "ibm_remoteIP";
+    public static final String IBM_BYTESRECEIVEDFORMATTED = "ibm_bytesReceivedFormatted";
+    public static final String IBM_COOKIE = "ibm_cookie"; // look at this dynamic one
+    public static final String IBM_REQUESTELAPSEDTIME = "ibm_requestElapsedTime";
+    public static final String IBM_REQUESTHEADER = "ibm_requestHeader"; // <- same with this one
+    public static final String IBM_RESPONSEHEADER = "ibm_responseHeader"; // ^
+    public static final String IBM_REQUESTFIRSTLINE = "ibm_requestFirstLine";
+    public static final String IBM_ACCESSLOGDATETIME = "ibm_accessLogDatetime";
+    public static final String IBM_REMOTEUSERID = "ibm_remoteUserID";
 
     //liberty_ffdc
     public static final String DATEOFFIRSTOCCURENCE = "dateOfFirstOccurence";

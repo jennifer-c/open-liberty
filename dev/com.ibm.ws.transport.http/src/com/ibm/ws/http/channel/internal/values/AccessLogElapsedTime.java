@@ -28,16 +28,7 @@ public class AccessLogElapsedTime extends AccessLogData {
     public boolean set(StringBuilder accessLogEntry,
                        HttpResponseMessage response, HttpRequestMessage request,
                        Object data) {
-        HttpRequestMessageImpl requestMessageImpl = null;
-        long startTime = 0;
-        if (request != null) {
-            requestMessageImpl = (HttpRequestMessageImpl) request;
-        }
-
-        if (requestMessageImpl != null) {
-            startTime = requestMessageImpl.getStartTime();
-        }
-
+        long startTime = getStartTime(response, request, data);
         if (startTime != 0) {
             long elapsedTime = System.nanoTime() - startTime;
             accessLogEntry.append(TimeUnit.NANOSECONDS.toMicros(elapsedTime));
@@ -48,4 +39,26 @@ public class AccessLogElapsedTime extends AccessLogData {
         return true;
     }
 
+    public static long getStartTime(HttpResponseMessage response, HttpRequestMessage request, Object data) {
+        HttpRequestMessageImpl requestMessageImpl = null;
+        long startTime = 0;
+        if (request != null) {
+            requestMessageImpl = (HttpRequestMessageImpl) request;
+        }
+
+        if (requestMessageImpl != null) {
+            startTime = requestMessageImpl.getStartTime();
+        }
+        return startTime;
+    }
+
+    public static long getElapsedTime(HttpResponseMessage response, HttpRequestMessage request, Object data) {
+        long startTime = getStartTime(response, request, data);
+        if (startTime != 0) {
+            long elapsedTime = System.nanoTime() - startTime;
+            return TimeUnit.NANOSECONDS.toMicros(elapsedTime);
+        } else {
+            return 0;
+        }
+    }
 }

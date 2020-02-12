@@ -31,10 +31,10 @@ public class AccessLogFirstLine extends AccessLogData {
         String requestVersion = null;
 
         if (request != null) {
-            requestMethod = request.getMethod();
-            requestURI = request.getRequestURI();
-            requestQueryString = request.getQueryString();
-            requestVersion = request.getVersion();
+            requestMethod = getRequestMethod(response, request, data);
+            requestURI = getRequestURI(response, request, data);
+            requestQueryString = getRequestQueryString(response, request, data);
+            requestVersion = getRequestVersion(response, request, data);
         }
 
         logSafe(accessLogEntry, requestMethod);
@@ -51,4 +51,58 @@ public class AccessLogFirstLine extends AccessLogData {
 
         return true;
     }
+
+    public static String getRequestMethod(HttpResponseMessage response, HttpRequestMessage request, Object data) {
+        String requestMethod = null;
+        if (request != null) {
+            requestMethod = request.getMethod();
+        }
+        return requestMethod;
+    }
+
+    public static String getRequestURI(HttpResponseMessage response, HttpRequestMessage request, Object data) {
+        String requestURI = null;
+        if (request != null) {
+            requestURI = request.getRequestURI();
+        }
+        return requestURI;
+    }
+
+    public static String getRequestQueryString(HttpResponseMessage response, HttpRequestMessage request, Object data) {
+        String requestQueryString = null;
+        if (request != null) {
+            requestQueryString = request.getQueryString();
+        }
+        return requestQueryString;
+    }
+
+    public static String getRequestVersion(HttpResponseMessage response, HttpRequestMessage request, Object data) {
+        String requestVersion = null;
+        if (request != null) {
+            requestVersion = request.getVersion();
+        }
+        return requestVersion;
+    }
+
+    public static String getFirstLineAsString(HttpResponseMessage response, HttpRequestMessage request, Object data) {
+        if (request != null) {
+            StringBuilder sb = new StringBuilder();
+            String requestMethod = getRequestMethod(response, request, data);
+            String requestURI = getRequestURI(response, request, data);
+            String requestQueryString = getRequestQueryString(response, request, data);
+            String requestVersion = getRequestVersion(response, request, data);
+            sb.append(requestMethod);
+            sb.append(" ");
+            sb.append(requestURI);
+            if (requestQueryString != null) {
+                sb.append("?");
+                sb.append(GenericUtils.nullOutPasswords(requestQueryString, (byte) '&'));
+            }
+            sb.append(" ");
+            sb.append(requestVersion);
+            return sb.toString();
+        }
+        return "-";
+    }
+
 }
