@@ -164,6 +164,18 @@ public abstract class JsonLogHandler implements SynchronousHandler, Formatter {
         return jsonStr;
     }
 
+    // LG 265
+
+    @Override
+    public Object formatEvent(String source, String location, Object event, String[] tags, int maxFieldLength, boolean enableCustomAccessLogFields) {
+
+        String eventType = CollectorJsonUtils.getEventType(source, location);
+        String jsonStr = CollectorJsonUtils.jsonifyEvent(event, eventType, serverName, wlpUserDir, serverHostName, "JSON", tags,
+                                                         MAXFIELDLENGTH, enableCustomAccessLogFields);
+        return jsonStr;
+    }
+    // LG 265
+
     public void setWlpServerName(String serverName) {
         this.wlpServerName = serverName;
     }

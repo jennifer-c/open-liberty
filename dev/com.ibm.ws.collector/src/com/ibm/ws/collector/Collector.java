@@ -63,6 +63,7 @@ public abstract class Collector implements Handler, Formatter {
     private static final String TAG_LIST_KEY = "tag";
     private static final String MAX_FIELD_KEY = "maxFieldLength";
     private static final String MAX_EVENTS_KEY = "maxEvents";
+    private static final String ENABLE_CUSTOM_ACCESS_LOG_FIELDS_KEY = "enableCustomAccessLogFields";
 
     protected static final String EXECUTOR_SERVICE = "executorService";
     protected final AtomicServiceReference<ExecutorService> executorServiceRef = new AtomicServiceReference<ExecutorService>(EXECUTOR_SERVICE);
@@ -209,6 +210,7 @@ public abstract class Collector implements Handler, Formatter {
      * 3) Status, whether it is enabled or not
      * 4) Tags associated with the config
      * 5) maxEvents associated with the config, to throttle events
+     * 6) Whether custom access log fields will be sent
      */
     private List<TaskConfig> parseConfig(Map<String, Object> config) {
         List<TaskConfig> result = new ArrayList<TaskConfig>();
@@ -246,6 +248,8 @@ public abstract class Collector implements Handler, Formatter {
 
         }
 
+        Boolean enableCustomAccessLogFields = (Boolean) config.get(ENABLE_CUSTOM_ACCESS_LOG_FIELDS_KEY);
+
         if (config.containsKey(SOURCE_LIST_KEY)) {
             String[] sourceList = (String[]) config.get(SOURCE_LIST_KEY);
             if (sourceList != null) {
@@ -261,6 +265,7 @@ public abstract class Collector implements Handler, Formatter {
                         builder.tags(tagList);
                         builder.maxEvents(maxEvents);
                         builder.maxFieldLength(maxFieldLength);
+                        builder.enableCustomAccessLogFields(enableCustomAccessLogFields);
                         result.add(builder.build());
                     }
                 }
