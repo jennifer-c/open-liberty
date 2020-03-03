@@ -538,7 +538,17 @@ public class LogProviderConfigImpl implements LogProviderConfig {
             return newValue;
         }
 
-//        // LG 265
+        /**
+         * Gets the boolean value. During initializing, the property value is set
+         * to the default (or server env value if set) if the config property is not found.
+         * Note: During runtime server update if configKey is not set, it'll look up the property
+         * value i.e the ibm:variable (see the metatype.xml)
+         *
+         * @param config
+         * @param defaultValue
+         * @param isInit
+         * @return
+         */
         Boolean getBooleanValueAndSaveInit(Map<String, Object> config, boolean defaultValue, boolean isInit) {
             Object value = config.get(isInit ? propertyKey : configKey);
             Boolean newValue = LoggingConfigUtils.getBooleanValue(value, defaultValue);
@@ -547,7 +557,6 @@ public class LogProviderConfigImpl implements LogProviderConfig {
             }
             return newValue;
         }
-//        // LG 265
 
         /**
          * Gets a collection from the config. During initializing, the property value is set

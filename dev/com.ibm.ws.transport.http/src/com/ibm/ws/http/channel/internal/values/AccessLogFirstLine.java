@@ -102,7 +102,7 @@ public class AccessLogFirstLine extends AccessLogData {
             sb.append(requestVersion);
             return sb.toString();
         }
-        return "-";
+        return null;
     }
 
 }

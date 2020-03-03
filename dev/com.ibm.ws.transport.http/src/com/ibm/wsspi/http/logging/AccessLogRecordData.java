@@ -36,12 +36,4 @@ public interface AccessLogRecordData {
     String getLocalIP();
 
     String getLocalPort();
-
-//    String getRemoteIP();
-//
-//    long getBytesReceivedFormatted();
-
-    //String getCookie();
-
-    //String getRemoteUser();
 }

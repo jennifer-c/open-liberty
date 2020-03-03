@@ -43,10 +43,6 @@ public class AccessLogRemoteUser extends AccessLogData {
             remoteUser = requestMessageImpl.getRemoteUser();
         }
 
-        if (remoteUser != null) {
-            return remoteUser;
-        } else {
-            return "-";
-        }
+        return remoteUser;
     }
 }
