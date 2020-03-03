@@ -36,6 +36,14 @@ public class CollectorJsonUtils {
         return CollectorJsonHelpers.getEventType(source, location);
     }
 
+    // LG 265 TESTING
+    public static String jsonifyEvent(Object event, String eventType, String serverName, String wlpUserDir, String serverHostName, String collectorVersion, String[] tags,
+                                      int maxFieldLength, boolean enableCustomAccessLogFields) {
+        AccessLogData.isCustomAccessLogToJSONEnabledCollector = enableCustomAccessLogFields;
+        return jsonifyEvent(event, eventType, serverName, wlpUserDir, serverHostName, collectorVersion, tags, maxFieldLength);
+    }
+    // END LG 265
+
     /**
      * Method to return log event data in json format. If the collector version passed is greater than 1.0
      * then the jsonifyEvent call is passed to another version of CollectorJsonUtils.
@@ -257,47 +265,38 @@ public class CollectorJsonUtils {
         CollectorJsonHelpers.addToJSON(sb, accessLogData.getSequenceKey(), accessLogData.getSequence(), false, true, false, false, false);
 
         // LG-265
-        if (AccessLogData.isCustomAccessLogToJSONEnabled) {
+        if (AccessLogData.isCustomAccessLogToJSONEnabledCollector) {
             // %a
             if (accessLogData.getRemoteIP() != null)
-                CollectorJsonHelpers.addToJSON(sb, AccessLogData.getRemoteIPKeyJSON(), accessLogData.getRemoteIP(), AccessLogData.getSequenceOmitBoolJSON(), false, true, false,
-                                               !(sb.length() > 1),
-                                               false);
+                CollectorJsonHelpers.addToJSON(sb, accessLogData.getRemoteIPKey(), accessLogData.getRemoteIP(), false, false, true, false,
+                                               !(sb.length() > 1), false);
             // %b
             if (accessLogData.getBytesReceivedFormatted() != null)
-                CollectorJsonHelpers.addToJSON(sb, AccessLogData.getBytesReceivedFormattedKeyJSON(), accessLogData.getBytesReceivedFormatted(),
-                                               AccessLogData.getSequenceOmitBoolJSON(),
-                                               false, true, false,
-                                               !(sb.length() > 1),
-                                               false);
+                CollectorJsonHelpers.addToJSON(sb, accessLogData.getBytesReceivedFormattedKey(), accessLogData.getBytesReceivedFormatted(),
+                                               false, false, true, false, !(sb.length() > 1), false);
             // %C
             ArrayList<KeyValuePair> cookies = null;
             KeyValuePairList kvplCookies = accessLogData.getCookies();
             if (kvplCookies != null) {
                 cookies = kvplCookies.getList();
                 for (KeyValuePair k : cookies) {
-                    CollectorJsonHelpers.addToJSON(sb, AccessLogData.getCookieKeyJSON(k), k.getStringValue(),
-                                                   AccessLogData.getSequenceOmitBoolJSON(), true, true, false, !(sb.length() > 1),
-                                                   false);
+                    CollectorJsonHelpers.addToJSON(sb, accessLogData.getCookieKey(k), k.getStringValue(),
+                                                   false, true, true, false, !(sb.length() > 1), false);
                 }
             }
 
             // %D
             if (accessLogData.getRequestElapsedTime() > 0)
-                CollectorJsonHelpers.addToJSON(sb, AccessLogData.getRequestElapsedTimeKeyJSON(), Long.toString(accessLogData.getRequestElapsedTime()),
-                                               AccessLogData.getSequenceOmitBoolJSON(), false,
-                                               true, false,
-                                               !(sb.length() > 1),
-                                               true);
+                CollectorJsonHelpers.addToJSON(sb, accessLogData.getRequestElapsedTimeKey(), Long.toString(accessLogData.getRequestElapsedTime()),
+                                               false, false, true, false, !(sb.length() > 1), true);
             // %i
             ArrayList<KeyValuePair> requestHeaders = null;
             KeyValuePairList kvplRequestHeaders = accessLogData.getRequestHeaders();
             if (kvplRequestHeaders != null) {
                 requestHeaders = kvplRequestHeaders.getList();
                 for (KeyValuePair k : requestHeaders) {
-                    CollectorJsonHelpers.addToJSON(sb, AccessLogData.getRequestHeaderKeyJSON(k), k.getStringValue(),
-                                                   AccessLogData.getSequenceOmitBoolJSON(), true, true, false, !(sb.length() > 1),
-                                                   false);
+                    CollectorJsonHelpers.addToJSON(sb, accessLogData.getRequestHeaderKey(k), k.getStringValue(),
+                                                   false, true, true, false, !(sb.length() > 1), false);
                 }
             }
             // %o
@@ -306,36 +305,26 @@ public class CollectorJsonUtils {
             if (kvplResponseHeaders != null) {
                 responseHeaders = kvplResponseHeaders.getList();
                 for (KeyValuePair k : responseHeaders) {
-                    CollectorJsonHelpers.addToJSON(sb, AccessLogData.getResponseHeaderKeyJSON(k), k.getStringValue(),
-                                                   AccessLogData.getSequenceOmitBoolJSON(), true, true, false, !(sb.length() > 1),
-                                                   false);
+                    CollectorJsonHelpers.addToJSON(sb, accessLogData.getResponseHeaderKey(k), k.getStringValue(),
+                                                   false, true, true, false, !(sb.length() > 1), false);
                 }
             }
             // %r
             if (accessLogData.getRequestFirstLine() != null)
-                CollectorJsonHelpers.addToJSON(sb, AccessLogData.getRequestFirstLineKeyJSON(), accessLogData.getRequestFirstLine(), AccessLogData.getSequenceOmitBoolJSON(), false,
-                                               true, false,
-                                               !(sb.length() > 1),
-                                               false);
+                CollectorJsonHelpers.addToJSON(sb, accessLogData.getRequestFirstLineKey(), accessLogData.getRequestFirstLine(), false,
+                                               false, true, false, !(sb.length() > 1), false);
             // %t
             if (accessLogData.getRequestStartTime() != null)
-                CollectorJsonHelpers.addToJSON(sb, AccessLogData.getRequestStartTimeKeyJSON(), accessLogData.getRequestStartTime(), AccessLogData.getSequenceOmitBoolJSON(), false,
-                                               true, false,
-                                               !(sb.length() > 1),
-                                               false);
+                CollectorJsonHelpers.addToJSON(sb, accessLogData.getRequestStartTimeKey(), accessLogData.getRequestStartTime(), false,
+                                               false, true, false, !(sb.length() > 1), false);
             // %{t}W
             if (accessLogData.getAccessLogDatetime() != null)
-                CollectorJsonHelpers.addToJSON(sb, AccessLogData.getAccessLogDatetimeKeyJSON(), accessLogData.getAccessLogDatetime(), AccessLogData.getSequenceOmitBoolJSON(),
-                                               false,
-                                               true,
-                                               false,
-                                               !(sb.length() > 1),
-                                               false);
+                CollectorJsonHelpers.addToJSON(sb, accessLogData.getAccessLogDatetimeKey(), accessLogData.getAccessLogDatetime(),
+                                               false, false, true, false, !(sb.length() > 1), false);
             // %u
             if (accessLogData.getRemoteUser() != null)
-                CollectorJsonHelpers.addToJSON(sb, AccessLogData.getRemoteUserKeyJSON(), accessLogData.getRemoteUser(), AccessLogData.getSequenceOmitBoolJSON(), false, true, false,
-                                               !(sb.length() > 1),
-                                               false);
+                CollectorJsonHelpers.addToJSON(sb, accessLogData.getRemoteUserKey(), accessLogData.getRemoteUser(), false, false, true,
+                                               false, !(sb.length() > 1), false);
         }
         // END LG-265
 

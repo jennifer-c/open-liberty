@@ -33,18 +33,18 @@ public class AccessLogResponseHeaderValue extends AccessLogData {
     @Override
     public boolean set(StringBuilder accessLogEntry,
                        HttpResponseMessage response, HttpRequestMessage request, Object data) {
-//        String headerName = (String) data;
-//        String headerValue = null;
-//
-//        if (headerName != null) {
-//            headerValue = getHeaderValue(response, request, data);
-//        }
-//
-//        if (headerValue != null) {
-//            accessLogEntry.append(headerValue);
-//        } else {
-//            accessLogEntry.append("-");
-//        }
+        String headerName = (String) data;
+        String headerValue = null;
+
+        if (headerName != null) {
+            headerValue = getHeaderValue(response, request, data);
+        }
+
+        if (headerValue != null) {
+            accessLogEntry.append(headerValue);
+        } else {
+            accessLogEntry.append("-");
+        }
 
         accessLogEntry.append(getHeaderValue(response, request, data));
 
@@ -57,11 +57,7 @@ public class AccessLogResponseHeaderValue extends AccessLogData {
         if (headerName != null) {
             headerValue = request.getHeader(headerName).asString();
         }
-
-        if (headerValue != null) {
-            return headerValue;
-        } else {
-            return "-";
-        }
+        // Could be null - if it's null, don't print to JSON
+        return headerValue;
     }
 }

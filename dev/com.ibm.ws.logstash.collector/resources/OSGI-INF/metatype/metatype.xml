@@ -23,6 +23,8 @@
 	
 	<AD name="%sslRef" description="%sslRef.desc" id="sslRef" required="false" type="String" ibmui:uiReference="com.ibm.ws.ssl.repertoire" />
 	
+	<AD name="%enableCustomAccessLogFields" description="%enableCustomAccessLogFields.desc" id="enableCustomAccessLogFields" required="false" type="Boolean" default="false" />
+	
 	<AD name="%tag" description="%tag.desc" id="tag" required="false" type="String" cardinality="1024"/>
 	
 	<AD name="internal" description="internal use only" id="sourceHostName" required="false" type="String" default=""/>

@@ -18,4 +18,6 @@ public interface Formatter {
      * by target.
      */
     public abstract Object formatEvent(String source, String location, Object event, String[] tags, int maxFieldLength);
+
+    public abstract Object formatEvent(String source, String location, Object event, String[] tags, int maxFieldLength, boolean enableCustomAccessLogFields);
 }

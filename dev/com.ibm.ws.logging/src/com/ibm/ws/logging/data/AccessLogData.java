@@ -64,13 +64,29 @@ public class AccessLogData extends GenericData {
                                             LogFieldConstants.RESPONSECODE,
                                             LogFieldConstants.ELAPSEDTIME,
                                             LogFieldConstants.DATETIME,
-                                            LogFieldConstants.SEQUENCE
+                                            LogFieldConstants.SEQUENCE,
+                                            LogFieldConstants.REMOTEIP,
+                                            LogFieldConstants.BYTESRECEIVEDFORMATTED,
+                                            LogFieldConstants.COOKIE,
+                                            LogFieldConstants.REQUESTELAPSEDTIME,
+                                            LogFieldConstants.REQUESTHEADER,
+                                            LogFieldConstants.RESPONSEHEADER,
+                                            LogFieldConstants.REQUESTFIRSTLINE,
+                                            LogFieldConstants.REQUESTSTARTTIME,
+                                            LogFieldConstants.ACCESSLOGDATETIME,
+                                            LogFieldConstants.REMOTEUSERID
     };
 
-    private static NameAliases jsonLoggingNameAliases = new NameAliases(NAMES1_1);
+    private static NameAliases jsonLoggingNameAliases = new NameAliases(NAMES1_1);<<<<<<<HEAD=======
+    private static boolean[] omitFieldsArray = new boolean[28];>>>>>>>
+    Add option
+    to logstash collector for
+    custom access
+    log fields
 
     // lg265 testing
     public static boolean isCustomAccessLogToJSONEnabled = false;
+    public static boolean isCustomAccessLogToJSONEnabledCollector = false;
 
     public static void newJsonLoggingNameAliases(Map<String, String> newAliases) {
         jsonLoggingNameAliases.newAliases(newAliases);
@@ -195,6 +211,7 @@ public class AccessLogData extends GenericData {
     }
     // END LG-265
 
+    // Check if release bug or optional field
 //    public long getRequestStartTime() {
 //        return getLongValue(0);
 //    }
@@ -302,9 +319,9 @@ public class AccessLogData extends GenericData {
     }
     // END LG-265
 
-    public String getRequestStartTimeKey() {
-        return NAMES[0];
-    }
+//    public String getRequestStartTimeKey() {
+//        return NAMES[0];
+//    }
 
     public String getUriPathKey() {
         return NAMES[1];
@@ -357,6 +374,48 @@ public class AccessLogData extends GenericData {
     public String getSequenceKey() {
         return NAMES[13];
     }
+
+    // LG 265
+    public String getRemoteIPKey() {
+        return NAMES[14];
+    }
+
+    public String getBytesReceivedFormattedKey() {
+        return NAMES[15];
+    }
+
+    public String getCookieKey(KeyValuePair kvp) {
+        return NAMES[16] + "_" + kvp.getKey();
+    }
+
+    public String getRequestElapsedTimeKey() {
+        return NAMES[17];
+    }
+
+    public String getRequestHeaderKey(KeyValuePair kvp) {
+        return NAMES[18] + "_" + kvp.getKey();
+    }
+
+    public String getResponseHeaderKey(KeyValuePair kvp) {
+        return NAMES[19] + "_" + kvp.getKey();
+    }
+
+    public String getRequestFirstLineKey() {
+        return NAMES[20];
+    }
+
+    public String getRequestStartTimeKey() {
+        return NAMES[21];
+    }
+
+    public String getAccessLogDatetimeKey() {
+        return NAMES[22];
+    }
+
+    public String getRemoteUserKey() {
+        return NAMES[23];
+    }
+    // LG 265
 
     public String getRequestStartTimeKey1_1() {
         return NAMES1_1[0];
@@ -415,7 +474,8 @@ public class AccessLogData extends GenericData {
     }
 
     //name aliases
-    // TODO: Maybe uncomment this later?
+
+    // TODO: Maybe uncomment this later? -> see if this is a release bug or an optional field
 //    public static String getRequestStartTimeKeyJSON() {
 //        return jsonLoggingNameAliases.aliases[0];
 //    }

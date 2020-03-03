@@ -383,7 +383,7 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
         if (!isStarted()) {
             return;
         }
-        AccessLogExtraData extraData = new AccessLogExtraData(); // LG 265 TESTING
+        AccessLogExtraData extraData = new AccessLogExtraData();
         try {
             StringBuilder accessLogLine;
             if (parsedFormat != null) {
@@ -392,9 +392,9 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
                     if (s.string != null) {
                         accessLogLine.append(s.string);
                     }
+                    // Sets information in the extraData object for each format specifier
                     if (s.log != null) {
                         s.log.set(accessLogLine, response, request, s.data);
-                        // LG 265 start
                         String formatSpecifier = s.log.getName();
                         accessLogLine.append(formatSpecifier);
                         if (formatSpecifier.equals("%a")) {
@@ -404,20 +404,25 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
                         } else if (formatSpecifier.equals("%C")) {
                             if (s.data != null) {
                                 HttpCookie c = AccessLogRequestCookie.getCookie(response, request, s.data);
-                                extraData.setCookie(c.getName(), c.getValue());
+                                if (c != null)
+                                    extraData.setCookie(c.getName(), c.getValue());
+                                // If the cookie is null, do nothing
                             } else {
                                 // If data is null, they specified %C without a cookie name, which returns all cookies
                                 List<HttpCookie> cookies = AccessLogRequestCookie.getAllCookies(response, request, null);
                                 for (HttpCookie c : cookies) {
-                                    extraData.setCookie(c.getName(), c.getValue());
+                                    if (c != null)
+                                        extraData.setCookie(c.getName(), c.getValue());
                                 }
                             }
                         } else if (formatSpecifier.equals("%D")) {
                             extraData.setRequestElapsedTime(AccessLogElapsedTime.getElapsedTime(response, request, s.data));
                         } else if (formatSpecifier.equals("%i")) {
+                            // Header name must be specified - no catch-all like cookie
                             if (s.data != null)
                                 extraData.setRequestHeader((String) s.data, AccessLogRequestHeaderValue.getHeaderValue(response, request, s.data));
                         } else if (formatSpecifier.matches("%o")) {
+                            // Header name must be specified - no catch-all like cookie
                             if (s.data != null)
                                 extraData.setResponseHeader((String) s.data, AccessLogResponseHeaderValue.getHeaderValue(response, request, s.data));
                         } else if (formatSpecifier.equals("%r")) {
@@ -549,7 +554,6 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
         final String localPort;
         final String remoteIP;
         final long bytesReceivedFormatted;
-        //final String remoteUser;
 
         // ** timestamp
         timestamp = System.currentTimeMillis();
@@ -565,23 +569,6 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
 
         // ** LocalPort
         localPort = AccessLogLocalPort.getLocalPort(response2, request2, null);
-
-        // LG 265
-
-//        // ** RemoteIP
-//        remoteIP = AccessLogRemoteIP.getRemoteIP(response2, request2, null);
-//
-//        // ** Bytes Received
-//        bytesReceivedFormatted = AccessLogResponseSize.getResponseSize(response2, request2, null);
-
-        // ** Cookie
-        //HttpCookie cookie1 = AccessLogRequestCookie.getCookie(response2, request2, null);
-        //cookie = cookie1.getName() + ":" + cookie1.getValue();
-
-        // ** RemoteUser
-        //remoteUser = AccessLogRemoteUser.getRemoteUser(response2, request2, null);
-
-        // LG 265 end
 
         // ** AccessLogRecordData
         AccessLogRecordData recordData = new AccessLogRecordData() {
@@ -640,27 +627,6 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
             public String getLocalPort() {
                 return localPort;
             }
-
-            // LG 265
-//            @Override
-//            public String getRemoteIP() {
-//                return remoteIP;
-//            }
-//
-//            @Override
-//            public long getBytesReceivedFormatted() {
-//                return bytesReceivedFormatted;
-//            }
-
-//            @Override
-//            public String getCookie() {
-//                return cookie;
-//            }
-//            @Override
-//            public String getRemoteUser() {
-//                return remoteUser;
-//            }
-            // End LG 265
         };
         return recordData;
     }
