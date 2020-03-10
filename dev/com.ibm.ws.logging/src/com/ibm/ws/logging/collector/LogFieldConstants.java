@@ -79,8 +79,8 @@ public class LogFieldConstants {
     // LG-265 new fields
     public static final String IBM_REMOTEIP = "ibm_remoteIP";
     public static final String REMOTEIP = "remoteIP";
-    public static final String IBM_BYTESRECEIVEDFORMATTED = "ibm_bytesReceivedFormatted";
-    public static final String BYTESRECEIVEDFORMATTED = "bytesReceivedFormatted";
+    public static final String IBM_BYTESSENT = "ibm_bytesSent";
+    public static final String BYTESSENT = "bytesSent";
     public static final String IBM_COOKIE = "ibm_cookie";
     public static final String COOKIE = "cookie";
     public static final String IBM_REQUESTELAPSEDTIME = "ibm_requestElapsedTime";

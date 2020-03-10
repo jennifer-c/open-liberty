@@ -31,26 +31,15 @@ import com.ibm.websphere.ras.annotation.Trivial;
 import com.ibm.ws.ffdc.FFDCFilter;
 import com.ibm.ws.genericbnf.internal.GenericUtils;
 import com.ibm.ws.http.channel.internal.HttpMessages;
-import com.ibm.ws.http.channel.internal.values.AccessLogCurrentTime;
 import com.ibm.ws.http.channel.internal.values.AccessLogData;
 import com.ibm.ws.http.channel.internal.values.AccessLogElapsedRequestTime;
-import com.ibm.ws.http.channel.internal.values.AccessLogElapsedTime;
-import com.ibm.ws.http.channel.internal.values.AccessLogFirstLine;
 import com.ibm.ws.http.channel.internal.values.AccessLogLocalIP;
 import com.ibm.ws.http.channel.internal.values.AccessLogLocalPort;
-import com.ibm.ws.http.channel.internal.values.AccessLogRemoteIP;
-import com.ibm.ws.http.channel.internal.values.AccessLogRemoteUser;
-import com.ibm.ws.http.channel.internal.values.AccessLogRequestCookie;
-import com.ibm.ws.http.channel.internal.values.AccessLogRequestHeaderValue;
-import com.ibm.ws.http.channel.internal.values.AccessLogResponseHeaderValue;
-import com.ibm.ws.http.channel.internal.values.AccessLogResponseSize;
 import com.ibm.ws.http.channel.internal.values.AccessLogStartTime;
 import com.ibm.ws.http.dispatcher.internal.HttpDispatcher;
-import com.ibm.ws.logging.data.AccessLogExtraData;
 import com.ibm.wsspi.bytebuffer.WsByteBuffer;
 import com.ibm.wsspi.genericbnf.HeaderField;
 import com.ibm.wsspi.genericbnf.HeaderStorage;
-import com.ibm.wsspi.http.HttpCookie;
 import com.ibm.wsspi.http.channel.HttpChannelUtils;
 import com.ibm.wsspi.http.channel.HttpRequestMessage;
 import com.ibm.wsspi.http.channel.HttpResponseMessage;
@@ -104,7 +93,7 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
 
     }
 
-    static class FormatSegment {
+    public static class FormatSegment {
         public String string;
         public Object data;
         public AccessLogData log;
@@ -383,7 +372,6 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
         if (!isStarted()) {
             return;
         }
-        AccessLogExtraData extraData = new AccessLogExtraData();
         try {
             StringBuilder accessLogLine;
             if (parsedFormat != null) {
@@ -395,45 +383,6 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
                     // Sets information in the extraData object for each format specifier
                     if (s.log != null) {
                         s.log.set(accessLogLine, response, request, s.data);
-                        String formatSpecifier = s.log.getName();
-                        accessLogLine.append(formatSpecifier);
-                        if (formatSpecifier.equals("%a")) {
-                            extraData.setRemoteIP(AccessLogRemoteIP.getRemoteIP(response, request, s.data));
-                        } else if (formatSpecifier.equals("%b")) {
-                            extraData.setBytesReceivedFormatted(AccessLogResponseSize.getResponseSizeAsString(response, request, s.data));
-                        } else if (formatSpecifier.equals("%C")) {
-                            if (s.data != null) {
-                                HttpCookie c = AccessLogRequestCookie.getCookie(response, request, s.data);
-                                if (c != null)
-                                    extraData.setCookie(c.getName(), c.getValue());
-                                // If the cookie is null, do nothing
-                            } else {
-                                // If data is null, they specified %C without a cookie name, which returns all cookies
-                                List<HttpCookie> cookies = AccessLogRequestCookie.getAllCookies(response, request, null);
-                                for (HttpCookie c : cookies) {
-                                    if (c != null)
-                                        extraData.setCookie(c.getName(), c.getValue());
-                                }
-                            }
-                        } else if (formatSpecifier.equals("%D")) {
-                            extraData.setRequestElapsedTime(AccessLogElapsedTime.getElapsedTime(response, request, s.data));
-                        } else if (formatSpecifier.equals("%i")) {
-                            // Header name must be specified - no catch-all like cookie
-                            if (s.data != null)
-                                extraData.setRequestHeader((String) s.data, AccessLogRequestHeaderValue.getHeaderValue(response, request, s.data));
-                        } else if (formatSpecifier.matches("%o")) {
-                            // Header name must be specified - no catch-all like cookie
-                            if (s.data != null)
-                                extraData.setResponseHeader((String) s.data, AccessLogResponseHeaderValue.getHeaderValue(response, request, s.data));
-                        } else if (formatSpecifier.equals("%r")) {
-                            extraData.setRequestFirstLine(AccessLogFirstLine.getFirstLineAsString(response, request, s.data));
-                        } else if (formatSpecifier.equals("%t")) {
-                            extraData.setRequestStartTime(AccessLogStartTime.getStartTimeAsString(response, request, s.data));
-                        } else if (formatSpecifier.equals("%{t}W")) {
-                            extraData.setAccessLogDatetime(AccessLogCurrentTime.getAccessLogCurrentTimeAsString(response, request, s.data));
-                        } else if (formatSpecifier.equals("%u")) {
-                            extraData.setRemoteUser(AccessLogRemoteUser.getRemoteUser(response, request, s.data));
-                        }
                     }
                 }
             } else {
@@ -509,7 +458,7 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
                 AccessLogRecordData recordData = toAccessLogRecordData(request, response, version, userId, remoteAddr, numBytes);
                 for (AccessLogForwarder forwarder : LogForwarderManager.getAccessLogForwarders()) {
                     try {
-                        forwarder.process(recordData, extraData);
+                        forwarder.process(recordData, parsedFormat);
                     } catch (Throwable t) {
                         FFDCFilter.processException(t, getClass().getName() + ".log", "136", this);
                         if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {
@@ -552,8 +501,6 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
         final long elapsedTime;
         final String localIP;
         final String localPort;
-        final String remoteIP;
-        final long bytesReceivedFormatted;
 
         // ** timestamp
         timestamp = System.currentTimeMillis();

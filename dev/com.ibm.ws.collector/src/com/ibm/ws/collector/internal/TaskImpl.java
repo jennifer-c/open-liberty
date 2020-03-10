@@ -119,7 +119,7 @@ public class TaskImpl extends Task implements Runnable {
         long startTime = System.nanoTime();
 
         Object formattedEvent = formatter.formatEvent(config.getSourceName(), config.getLocation(), event, config.getTags(), config.getMaxFieldLength(),
-                                                      config.getEnableCustomAccessLogFields());
+                                                      config.getjsonAccessLogFields());
         if (formattedEvent != null)
             eventsBuffer.add(formattedEvent);
 

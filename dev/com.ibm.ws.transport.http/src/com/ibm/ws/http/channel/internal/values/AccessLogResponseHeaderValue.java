@@ -46,8 +46,6 @@ public class AccessLogResponseHeaderValue extends AccessLogData {
             accessLogEntry.append("-");
         }
 
-        accessLogEntry.append(getHeaderValue(response, request, data));
-
         return true;
     }
 

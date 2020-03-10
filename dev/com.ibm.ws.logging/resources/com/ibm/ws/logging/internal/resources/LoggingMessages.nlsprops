@@ -156,6 +156,10 @@ JSON_FIELDS_INVALID_CHARACHTER=TRAS3011W: An invalid character was provided in t
 JSON_FIELDS_INVALID_CHARACHTER.explanation= Only letters, numbers, and : are accepted in the JSON logging field name mapping property
 JSON_FIELDS_INVALID_CHARACHTER.useraction= Change your JSON logging field name mapping property value to remove invalid characters
 
+JSON_ACCESS_LOG_FIELD_INVALID_VALUE=TRAS3012W: The provided value [{0}] for jsonAccessLogFields is invalid. Valid values are [default] and [logFormat]. The default value of [default] will be used.
+JSON_ACCESS_LOG_FIELD_INVALID_VALUE.explanation=The valid values jsonAccessLogFields are [default] and [logFormat].
+JSON_ACCESS_LOG_FIELD_INVALID_VALUE.useraction=Change the jsonAccessLogFields value to [default] or [logFormat]
+
 # Note: no 9999 message kept here because saving footprint space is more important
 
 # End of file
