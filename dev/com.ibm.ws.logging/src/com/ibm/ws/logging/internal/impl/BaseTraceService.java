@@ -186,7 +186,7 @@ public class BaseTraceService implements TrService {
     protected volatile boolean isoDateFormat = false;
 
     /** If true, format JSON logs to match the logFormat for access logging */
-    protected volatile boolean enableCustomAccessLogFields = false;
+    protected volatile String jsonAccessLogFields = "";
 
     /** Writer sending messages to the messages.log file */
     protected volatile TraceWriter messagesLog = null;
@@ -332,9 +332,11 @@ public class BaseTraceService implements TrService {
             BaseTraceFormatter.useIsoDateFormat = isoDateFormat;
         }
 
-        enableCustomAccessLogFields = trConfig.getEnableCustomAccessLogFields();
-        if (enableCustomAccessLogFields != AccessLogData.isCustomAccessLogToJSONEnabled) {
-            AccessLogData.isCustomAccessLogToJSONEnabled = enableCustomAccessLogFields;
+        // lg265
+        TraceComponent tc = Tr.register(LogTraceData.class, NLSConstants.GROUP, NLSConstants.LOGGING_NLS);
+        jsonAccessLogFields = trConfig.getjsonAccessLogFields();
+        if (jsonAccessLogFields != AccessLogData.isCustomAccessLogToJSONEnabled) {
+            AccessLogData.isCustomAccessLogToJSONEnabled = jsonAccessLogFields;
         }
 
         initializeWriters(trConfig);

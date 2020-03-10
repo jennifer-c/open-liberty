@@ -19,5 +19,5 @@ public interface Formatter {
      */
     public abstract Object formatEvent(String source, String location, Object event, String[] tags, int maxFieldLength);
 
-    public abstract Object formatEvent(String source, String location, Object event, String[] tags, int maxFieldLength, boolean enableCustomAccessLogFields);
+    public abstract Object formatEvent(String source, String location, Object event, String[] tags, int maxFieldLength, String jsonAccessLogFields);
 }

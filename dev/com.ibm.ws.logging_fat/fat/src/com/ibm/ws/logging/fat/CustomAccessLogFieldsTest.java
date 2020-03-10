@@ -26,9 +26,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import com.ibm.websphere.simplicity.config.Logging;
-import com.ibm.websphere.simplicity.config.ServerConfiguration;
-
 import componenttest.annotation.Server;
 import componenttest.custom.junit.runner.FATRunner;
 import componenttest.topology.impl.LibertyServer;
@@ -51,12 +48,16 @@ public class CustomAccessLogFieldsTest {
     @Server("CustomAccessLogFieldsXml")
     public static LibertyServer xmlServer;
 
+    @Server("CustomAccessLogFieldsBadConfig")
+    public static LibertyServer badConfigServer;
+
     private static final String SERVER_NAME_ENV = "CustomAccessLogFieldsEnv";
     private static final String SERVER_NAME_BOOTSTRAP = "CustomAccessLogFieldsBootstrap";
     private static final String SERVER_NAME_XML = "CustomAccessLogFieldsXml";
+    private static final String SERVER_NAME_BAD_CONFIG = "CustomAccessLogFieldsBadConfig";
 
     // variable naming convention?
-    private final String[] newFields = { "ibm_remoteIP", "ibm_bytesReceivedFormatted", "ibm_cookie", "ibm_requestElapsedTime", "ibm_requestHeader",
+    private final String[] newFields = { "ibm_remoteIP", "ibm_bytesSent", "ibm_cookie", "ibm_requestElapsedTime", "ibm_requestHeader",
                                          "ibm_responseHeader", "ibm_requestFirstLine", "ibm_requestStartTime", "ibm_accessLogDatetime", "ibm_remoteUserID" };
 
     private static LibertyServer serverInUse; // hold on to the server currently used so cleanUp knows which server to stop
@@ -66,11 +67,13 @@ public class CustomAccessLogFieldsTest {
         envServer = LibertyServerFactory.getLibertyServer(SERVER_NAME_ENV);
         bootstrapServer = LibertyServerFactory.getLibertyServer(SERVER_NAME_BOOTSTRAP);
         xmlServer = LibertyServerFactory.getLibertyServer(SERVER_NAME_XML);
+        badConfigServer = LibertyServerFactory.getLibertyServer(SERVER_NAME_BAD_CONFIG);
 
         // Preserve the original server configuration
         envServer.saveServerConfiguration();
         bootstrapServer.saveServerConfiguration();
         xmlServer.saveServerConfiguration();
+        badConfigServer.saveServerConfiguration();
     }
 
     public void setUp(LibertyServer server) throws Exception {
@@ -129,6 +132,45 @@ public class CustomAccessLogFieldsTest {
         assertTrue("There are fields missing in the output JSON log.", areAllFieldsPresent(lines));
     }
 
+    @Test
+    public void testAccessLogFaultyConfig() throws Exception {
+        // Should we have 3 tests to test each version? Can one test stop and start server 3x?
+        setUp(badConfigServer);
+        List<String> lines = badConfigServer.findStringsInFileInLibertyServerRoot("TRAS3012W", MESSAGE_LOG);
+
+        assertNotNull("The error message was not sent with a bad configuration.", lines);
+    }
+
+    @Test
+    public void testRenameAccessLogField() throws Exception {
+        // rename header, cookie <-- doesnt work yet
+        // rename broadly
+    }
+
+    @Test
+    public void testOmitAccessLogField() throws Exception {
+        // omit specific header, cookie <-- doesnt work yet
+        // omit broadly
+    }
+
+    @Test
+    public void testNullValuesDontPrintInJSON() throws Exception {
+        // in the access log, it'll print `-` but in the JSON log it shouldn't print at all
+        // test w/ header, cookie
+    }
+
+    @Test
+    public void testFieldsInAccessLogAreSameInJSON() throws Exception {
+        // test that the fields in the access log print the same value in the JSON logs
+    }
+
+    @Test
+    public void testOnlyUnchangingField() throws Exception {
+        // come up with better test name
+        // test that specifying `= logFormat` doesn't print out the original set of fields unless specified
+        // %h %H %A %B %m %p %q %R{W} %s %U <- should not be printed out
+    }
+
     public boolean areAllFieldsPresent(List<String> lines) {
         for (String s : newFields) {
             if (!lines.get(0).contains(s)) {
@@ -157,17 +199,4 @@ public class CustomAccessLogFieldsTest {
         }
 
     }
-
-    private static void setServerConfiguration(boolean isjsonFields, String newFieldName, LibertyServer server) throws Exception {
-        Logging loggingObj;
-        ServerConfiguration serverConfig = server.getServerConfiguration();
-        loggingObj = serverConfig.getLogging();
-        if (isjsonFields) {
-            loggingObj.setjsonFields(newFieldName);
-        }
-        server.setMarkToEndOfLog();
-        server.updateServerConfiguration(serverConfig);
-        server.waitForConfigUpdateInLogUsingMark(null);
-    }
-
 }
