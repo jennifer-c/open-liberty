@@ -259,10 +259,10 @@ public class LogstashCollector extends Collector {
     }
 
     @Override
-    public Object formatEvent(String source, String location, Object event, String[] tags, int maxFieldLength, boolean enableCustomAccessLogFields) {
+    public Object formatEvent(String source, String location, Object event, String[] tags, int maxFieldLength, String jsonAccessLogFields) {
         String eventType = CollectorJsonUtils.getEventType(source, location);
         String jsonStr = CollectorJsonUtils.jsonifyEvent(event, eventType, serverName, serverUserDir, serverHostName, logstashVersion, tags, maxFieldLength,
-                                                         enableCustomAccessLogFields);
+                                                         jsonAccessLogFields);
         LumberjackEvent<String, String> lumberjackEvent = null;
         if (!jsonStr.isEmpty()) {
 

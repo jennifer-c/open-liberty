@@ -29,7 +29,7 @@ public class TaskConfig {
 
     private final int maxEvents;
 
-    private final boolean enableCustomAccessLogFields;
+    private final String jsonAccessLogFields;
 
     public static class Builder {
 
@@ -42,7 +42,7 @@ public class TaskConfig {
         private String[] tags;
         private int maxFieldLength;
         private int maxEvents;
-        private boolean enableCustomAccessLogFields = false;
+        private String jsonAccessLogFields = "";
 
         public Builder(String source, String location) {
             this.source = source;
@@ -77,8 +77,8 @@ public class TaskConfig {
             return this;
         }
 
-        public Builder enableCustomAccessLogFields(boolean enableCustomAccessLogFields) {
-            this.enableCustomAccessLogFields = enableCustomAccessLogFields;
+        public Builder jsonAccessLogFields(String jsonAccessLogFields) {
+            this.jsonAccessLogFields = jsonAccessLogFields;
             return this;
         }
 
@@ -93,7 +93,7 @@ public class TaskConfig {
         tags = builder.tags;
         maxFieldLength = builder.maxFieldLength;
         maxEvents = builder.maxEvents;
-        enableCustomAccessLogFields = builder.enableCustomAccessLogFields;
+        jsonAccessLogFields = builder.jsonAccessLogFields;
     }
 
     public String sourceId() {
@@ -125,14 +125,14 @@ public class TaskConfig {
         return maxFieldLength;
     }
 
-    public boolean getEnableCustomAccessLogFields() {
-        return enableCustomAccessLogFields;
+    public String getjsonAccessLogFields() {
+        return jsonAccessLogFields;
     }
 
     @Override
     public String toString() {
         return "TaskConfig [location=" + location + ", sourceName=" + sourceName + ", enabled=" + enabled + ", tags=" + ((tags != null) ? Arrays.toString(tags) : tags)
-               + ", maxFieldLength=" + maxFieldLength + ", maxEvents=" + maxEvents + ", enableCustomAccessLogFields=" + enableCustomAccessLogFields + "]";
+               + ", maxFieldLength=" + maxFieldLength + ", maxEvents=" + maxEvents + ", jsonAccessLogFields=" + jsonAccessLogFields + "]";
     }
 
 }

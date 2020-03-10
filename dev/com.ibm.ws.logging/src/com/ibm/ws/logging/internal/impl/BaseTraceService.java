@@ -186,7 +186,7 @@ public class BaseTraceService implements TrService {
     protected volatile boolean isoDateFormat = false;
 
     /** If true, format JSON logs to match the logFormat for access logging */
-    protected volatile boolean enableCustomAccessLogFields = false;
+    protected volatile String jsonAccessLogFields = "";
 
     /** Writer sending messages to the messages.log file */
     protected volatile TraceWriter messagesLog = null;
@@ -333,6 +333,19 @@ public class BaseTraceService implements TrService {
         }
 
         applyJsonFields(trConfig.getjsonFields(), trConfig.getOmitJsonFields());
+        // lg265
+        TraceComponent tc = Tr.register(LogTraceData.class, NLSConstants.GROUP, NLSConstants.LOGGING_NLS);
+        jsonAccessLogFields = trConfig.getjsonAccessLogFields();
+        // Empty string means the user didn't specify the option
+        if (!(jsonAccessLogFields.equals("logFormat") || jsonAccessLogFields.equals("default") || jsonAccessLogFields.equals(""))) {
+            Tr.warning(tc, "JSON_ACCESS_LOG_FIELD_INVALID_VALUE", jsonAccessLogFields);
+        }
+        if (jsonAccessLogFields != AccessLogData.isCustomAccessLogToJSONEnabled) {
+            AccessLogData.isCustomAccessLogToJSONEnabled = jsonAccessLogFields;
+        }
+
+        // end lg 265
+
         initializeWriters(trConfig);
         if (hideMessageids.size() > 0) {
             String msgKey = isHpelEnabled ? "MESSAGES_CONFIGURED_HIDDEN_HPEL" : "MESSAGES_CONFIGURED_HIDDEN_2";
@@ -1266,8 +1279,6 @@ public class BaseTraceService implements TrService {
         return serverHostName;
     }
 
-<<<<<<< HEAD
-=======
     /**
      * Escape \b, \f, \n, \r, \t, ", \, / characters and appends to a string builder
      *

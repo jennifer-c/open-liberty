@@ -63,7 +63,7 @@ public abstract class Collector implements Handler, Formatter {
     private static final String TAG_LIST_KEY = "tag";
     private static final String MAX_FIELD_KEY = "maxFieldLength";
     private static final String MAX_EVENTS_KEY = "maxEvents";
-    private static final String ENABLE_CUSTOM_ACCESS_LOG_FIELDS_KEY = "enableCustomAccessLogFields";
+    private static final String ENABLE_CUSTOM_ACCESS_LOG_FIELDS_KEY = "jsonAccessLogFields";
 
     protected static final String EXECUTOR_SERVICE = "executorService";
     protected final AtomicServiceReference<ExecutorService> executorServiceRef = new AtomicServiceReference<ExecutorService>(EXECUTOR_SERVICE);
@@ -248,7 +248,7 @@ public abstract class Collector implements Handler, Formatter {
 
         }
 
-        Boolean enableCustomAccessLogFields = (Boolean) config.get(ENABLE_CUSTOM_ACCESS_LOG_FIELDS_KEY);
+        String jsonAccessLogFields = (String) config.get(ENABLE_CUSTOM_ACCESS_LOG_FIELDS_KEY);
 
         if (config.containsKey(SOURCE_LIST_KEY)) {
             String[] sourceList = (String[]) config.get(SOURCE_LIST_KEY);
@@ -265,7 +265,7 @@ public abstract class Collector implements Handler, Formatter {
                         builder.tags(tagList);
                         builder.maxEvents(maxEvents);
                         builder.maxFieldLength(maxFieldLength);
-                        builder.enableCustomAccessLogFields(enableCustomAccessLogFields);
+                        builder.jsonAccessLogFields(jsonAccessLogFields);
                         result.add(builder.build());
                     }
                 }

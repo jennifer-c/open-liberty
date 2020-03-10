@@ -23,6 +23,6 @@
 		<accessLogging logFormat='%a %b %C %D %{header}i %{Connection}o %r %t %{t}W %u'/>
     </httpEndpoint>
     
-    <logging jsonAccessLogFields="logFormat"/>
+    <logging jsonAccessLogFields="bad"/>
     
 </server>

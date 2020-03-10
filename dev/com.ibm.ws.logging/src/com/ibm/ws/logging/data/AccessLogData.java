@@ -10,6 +10,8 @@
  *******************************************************************************/
 package com.ibm.ws.logging.data;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import com.ibm.ws.logging.collector.LogFieldConstants;
@@ -38,7 +40,7 @@ public class AccessLogData extends GenericData {
                                               LogFieldConstants.IBM_SERVERNAME,
                                               LogFieldConstants.TYPE,
                                               LogFieldConstants.IBM_REMOTEIP,
-                                              LogFieldConstants.IBM_BYTESRECEIVEDFORMATTED,
+                                              LogFieldConstants.IBM_BYTESSENT,
                                               LogFieldConstants.IBM_COOKIE,
                                               LogFieldConstants.IBM_REQUESTELAPSEDTIME,
                                               LogFieldConstants.IBM_REQUESTHEADER,
@@ -66,7 +68,7 @@ public class AccessLogData extends GenericData {
                                             LogFieldConstants.DATETIME,
                                             LogFieldConstants.SEQUENCE,
                                             LogFieldConstants.REMOTEIP,
-                                            LogFieldConstants.BYTESRECEIVEDFORMATTED,
+                                            LogFieldConstants.BYTESSENT,
                                             LogFieldConstants.COOKIE,
                                             LogFieldConstants.REQUESTELAPSEDTIME,
                                             LogFieldConstants.REQUESTHEADER,
@@ -77,16 +79,19 @@ public class AccessLogData extends GenericData {
                                             LogFieldConstants.REMOTEUSERID
     };
 
-    private static NameAliases jsonLoggingNameAliases = new NameAliases(NAMES1_1);<<<<<<<HEAD=======
-    private static boolean[] omitFieldsArray = new boolean[28];>>>>>>>
-    Add option
-    to logstash collector for
-    custom access
-    log fields
-
+    private static NameAliases jsonLoggingNameAliases = new NameAliases(NAMES1_1);
     // lg265 testing
-    public static boolean isCustomAccessLogToJSONEnabled = false;
-    public static boolean isCustomAccessLogToJSONEnabledCollector = false;
+    public static String isCustomAccessLogToJSONEnabled = "";
+    public static String isCustomAccessLogToJSONEnabledCollector = "";
+    public List<String> formatSpecifiers;
+
+    public void setFormatSpecifierList(List<String> formatSpecifiers) {
+        this.formatSpecifiers = formatSpecifiers;
+    }
+
+    public List<String> getFormatSpecifierList() {
+        return formatSpecifiers;
+    }
 
     public static void newJsonLoggingNameAliases(Map<String, String> newAliases) {
         jsonLoggingNameAliases.newAliases(newAliases);
@@ -97,7 +102,6 @@ public class AccessLogData extends GenericData {
     }
 
     public AccessLogData() {
-        // Needs to be a dynamic size?
         super(24);
     }
 
@@ -113,73 +117,145 @@ public class AccessLogData extends GenericData {
         setPair(index, NAMES1_1[index], l);
     }
 
+//    public void setRequestStartTime(HashMap<String, String> map, long l) {
+//
+//    }
+
     public void setRequestStartTime(long l) {
         setPair(0, l);
+    }
+
+    public void setUriPath(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%U"))
+            setUriPath(s);
     }
 
     public void setUriPath(String s) {
         setPair(1, s);
     }
 
+    public void setRequestMethod(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%m"))
+            setRequestMethod(s);
+    }
+
     public void setRequestMethod(String s) {
         setPair(2, s);
+    }
+
+    public void setQueryString(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%q"))
+            setQueryString(s);
     }
 
     public void setQueryString(String s) {
         setPair(3, s);
     }
 
+    public void setRequestHost(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%A"))
+            setRequestHost(s);
+    }
+
     public void setRequestHost(String s) {
         setPair(4, s);
+    }
+
+    public void setRequestPort(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%p"))
+            setRequestPort(s);
     }
 
     public void setRequestPort(String s) {
         setPair(5, s);
     }
 
+    public void setRemoteHost(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%h"))
+            setRequestFirstLine(s);
+    }
+
     public void setRemoteHost(String s) {
         setPair(6, s);
     }
 
+    // User agent isn't part of logFormat
     public void setUserAgent(String s) {
         setPair(7, s);
+    }
+
+    public void setRequestProtocol(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%H"))
+            setRequestProtocol(s);
     }
 
     public void setRequestProtocol(String s) {
         setPair(8, s);
     }
 
+    public void setBytesReceived(long l, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%B"))
+            setBytesReceived(l);
+    }
+
     public void setBytesReceived(long l) {
         setPair(9, l);
+    }
+
+    public void setResponseCode(int i, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%s"))
+            setResponseCode(i);
     }
 
     public void setResponseCode(int i) {
         setPair(10, i);
     }
 
+    public void setElapsedTime(long l, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%{R}W"))
+            setElapsedTime(l);
+    }
+
     public void setElapsedTime(long l) {
         setPair(11, l);
     }
 
+    // Datetime also not part of logFormat
     public void setDatetime(long l) {
         setPair(12, l);
     }
 
+    // Sequence also not part of logFormat
     public void setSequence(String s) {
         setPair(13, s);
     }
 
     // LG-265
+    public void setRemoteIP(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%a"))
+            setRemoteIP(s);
+    }
+
     public void setRemoteIP(String s) {
         setPair(14, s);
     }
 
-    public void setBytesReceivedFormatted(String s) {
+    public void setBytesSent(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%b"))
+            setBytesSent(s);
+    }
+
+    public void setBytesSent(String s) {
         setPair(15, s);
     }
 
     public void setCookies(KeyValuePairList kvps) {
         setPair(16, kvps);
+    }
+
+    public void setRequestElapsedTime(long l, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%D"))
+            setRequestElapsedTime(l);
     }
 
     public void setRequestElapsedTime(long l) {
@@ -194,16 +270,36 @@ public class AccessLogData extends GenericData {
         setPair(19, kvps);
     }
 
+    public void setRequestFirstLine(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%r"))
+            setRequestFirstLine(s);
+    }
+
     public void setRequestFirstLine(String s) {
         setPair(20, s);
+    }
+
+    public void setRequestStartTime(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%t"))
+            setRequestFirstLine(s);
     }
 
     public void setRequestStartTime(String s) {
         setPair(21, s);
     }
 
+    public void setAccessLogDatetime(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%{t}W"))
+            setAccessLogDatetime(s);
+    }
+
     public void setAccessLogDatetime(String s) {
         setPair(22, s);
+    }
+
+    public void setRemoteUser(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%u"))
+            setRemoteUser(s);
     }
 
     public void setRemoteUser(String s) {
@@ -249,31 +345,50 @@ public class AccessLogData extends GenericData {
     }
 
     public long getBytesReceived() {
-        return getLongValue(9);
+        try {
+            return getLongValue(9);
+        } catch (Exception e) {
+            // Do nothing, the field hasn't been set in the logFormat
+        }
+        return -1;
     }
 
     public int getResponseCode() {
-        return getIntValue(10);
+        try {
+            return getIntValue(10);
+        } catch (Exception e) {
+            // Do nothing, the field hasn't been set in the logFormat
+        }
+        return -1;
     }
 
     public long getElapsedTime() {
-        return getLongValue(11);
+        try {
+            return getLongValue(11);
+        } catch (Exception e) {
+            // Do nothing, the field hasn't been set in the logFormat
+        }
+        return -1;
     }
 
     public long getDatetime() {
-        return getLongValue(12);
+        try {
+            return getLongValue(12);
+        } catch (Exception e) {
+            // Do nothing, the field hasn't been set in the logFormat
+        }
+        return -1;
     }
 
     public String getSequence() {
         return getStringValue(13);
     }
 
-    // LG-265
     public String getRemoteIP() {
         return getStringValue(14);
     }
 
-    public String getBytesReceivedFormatted() {
+    public String getBytesSent() {
         return getStringValue(15);
     }
 
@@ -317,7 +432,6 @@ public class AccessLogData extends GenericData {
     private KeyValuePairList getValues(int index) {
         return (KeyValuePairList) getPairs()[index];
     }
-    // END LG-265
 
 //    public String getRequestStartTimeKey() {
 //        return NAMES[0];
@@ -380,7 +494,7 @@ public class AccessLogData extends GenericData {
         return NAMES[14];
     }
 
-    public String getBytesReceivedFormattedKey() {
+    public String getBytesSentKey() {
         return NAMES[15];
     }
 
@@ -553,7 +667,7 @@ public class AccessLogData extends GenericData {
         return jsonLoggingNameAliases.aliases[18];
     }
 
-    public static String getBytesReceivedFormattedKeyJSON() {
+    public static String getBytesSentKeyJSON() {
         return jsonLoggingNameAliases.aliases[19];
     }
 

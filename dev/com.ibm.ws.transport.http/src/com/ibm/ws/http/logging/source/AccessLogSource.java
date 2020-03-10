@@ -10,15 +10,34 @@
  *******************************************************************************/
 package com.ibm.ws.http.logging.source;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
+import com.ibm.ws.http.channel.internal.values.AccessLogCurrentTime;
+import com.ibm.ws.http.channel.internal.values.AccessLogElapsedRequestTime;
+import com.ibm.ws.http.channel.internal.values.AccessLogElapsedTime;
+import com.ibm.ws.http.channel.internal.values.AccessLogFirstLine;
+import com.ibm.ws.http.channel.internal.values.AccessLogLocalIP;
+import com.ibm.ws.http.channel.internal.values.AccessLogLocalPort;
+import com.ibm.ws.http.channel.internal.values.AccessLogRemoteHost;
+import com.ibm.ws.http.channel.internal.values.AccessLogRemoteIP;
+import com.ibm.ws.http.channel.internal.values.AccessLogRemoteUser;
+import com.ibm.ws.http.channel.internal.values.AccessLogRequestCookie;
+import com.ibm.ws.http.channel.internal.values.AccessLogRequestHeaderValue;
+import com.ibm.ws.http.channel.internal.values.AccessLogResponseHeaderValue;
+import com.ibm.ws.http.channel.internal.values.AccessLogResponseSize;
+import com.ibm.ws.http.channel.internal.values.AccessLogResponseSizeB;
+import com.ibm.ws.http.channel.internal.values.AccessLogStartTime;
+import com.ibm.ws.http.logging.internal.AccessLogger.FormatSegment;
 import com.ibm.ws.logging.data.AccessLogData;
-import com.ibm.ws.logging.data.AccessLogExtraData;
+import com.ibm.ws.logging.data.KeyValuePairList;
 import com.ibm.wsspi.collector.manager.BufferManager;
 import com.ibm.wsspi.collector.manager.Source;
+import com.ibm.wsspi.http.HttpCookie;
 import com.ibm.wsspi.http.channel.HttpRequestMessage;
 import com.ibm.wsspi.http.channel.HttpResponseMessage;
 import com.ibm.wsspi.http.logging.AccessLogForwarder;
@@ -106,51 +125,93 @@ public class AccessLogSource implements Source {
 
         /** {@inheritDoc} */
         @Override
-        public void process(AccessLogRecordData recordData, AccessLogExtraData extraData) {
+        public void process(AccessLogRecordData recordData, FormatSegment[] parsedFormat) {
             HttpRequestMessage request = recordData.getRequest();
             HttpResponseMessage response = recordData.getResponse();
+            KeyValuePairList kvplCookies = new KeyValuePairList("cookies");
+            KeyValuePairList kvplRequestHeaders = new KeyValuePairList("requestHeaders");
+            KeyValuePairList kvplResponseHeaders = new KeyValuePairList("responseHeaders");
+            ArrayList<String> formatSpecifiers = new ArrayList<String>();
 
             if (request != null) {
 
                 AccessLogData accessLogData = new AccessLogData();
 
-                long requestStartTimeVal = recordData.getStartTime();
-                accessLogData.setRequestStartTime(requestStartTimeVal);
-                accessLogData.setUriPath(request.getRequestURI());
-                accessLogData.setRequestMethod(request.getMethod());
-                accessLogData.setQueryString(request.getQueryString());
-                accessLogData.setRequestHost(recordData.getLocalIP());
-                accessLogData.setRequestPort(recordData.getLocalPort());
-                accessLogData.setRemoteHost(recordData.getRemoteAddress());
-                accessLogData.setUserAgent(request.getHeader(USER_AGENT_HEADER).asString());
-                accessLogData.setRequestProtocol(request.getVersion());
-                accessLogData.setBytesReceived(recordData.getBytesWritten());
-                accessLogData.setResponseCode(response.getStatusCodeAsInt());
-                accessLogData.setElapsedTime(recordData.getElapsedTime());
-                accessLogData.setDatetime(recordData.getTimestamp());
-
+                long requestStartTimeVal = recordData.getStartTime(); // needed for sequence
                 // LG 265
-                if (extraData.isSet("remoteIP"))
-                    accessLogData.setRemoteIP(extraData.getRemoteIP());
-                if (extraData.isSet("bytesReceivedFormatted"))
-                    accessLogData.setBytesReceivedFormatted(extraData.getBytesReceivedFormatted());
-                if (extraData.isSet("cookies"))
-                    accessLogData.setCookies(extraData.getCookies());
-                if (extraData.isSet("requestElapsedTime"))
-                    accessLogData.setRequestElapsedTime(extraData.getRequestElapsedTime());
-                if (extraData.isSet("requestHeaders"))
-                    accessLogData.setRequestHeader(extraData.getRequestHeaders());
-                if (extraData.isSet("responseHeaders"))
-                    accessLogData.setResponseHeader(extraData.getResponseHeaders());
-                if (extraData.isSet("requestFirstLine"))
-                    accessLogData.setRequestFirstLine(extraData.getRequestFirstLine());
-                if (extraData.isSet("requestStartTime"))
-                    accessLogData.setRequestStartTime(extraData.getRequestStartTime());
-                if (extraData.isSet("accessLogDatetime"))
-                    accessLogData.setAccessLogDatetime(extraData.getAccessLogDatetime());
-                if (extraData.isSet("remoteUserID"))
-                    accessLogData.setRemoteUser(extraData.getRemoteUser());
-                // LG 265 end
+                if (AccessLogData.isCustomAccessLogToJSONEnabled.equals("logFormat") || AccessLogData.isCustomAccessLogToJSONEnabledCollector.equals("logFormat")) {
+                    for (FormatSegment s : parsedFormat) {
+                        if (s.log != null) {
+                            String formatSpecifier = s.log.getName();
+                            formatSpecifiers.add(formatSpecifier);
+                            switch (formatSpecifier) {
+                                case "%C":
+                                    if (s.data != null) {
+                                        HttpCookie c = AccessLogRequestCookie.getCookie(response, request, s.data);
+                                        if (c != null)
+                                            kvplCookies.addKeyValuePair(c.getName(), c.getValue());
+                                    } else {
+                                        // If data is null, they specified %C without a cookie name, which returns all cookies
+                                        List<HttpCookie> cookies = AccessLogRequestCookie.getAllCookies(response, request, null);
+                                        for (HttpCookie c : cookies) {
+                                            if (c != null)
+                                                kvplCookies.addKeyValuePair(c.getName(), c.getValue());
+                                        }
+                                    }
+                                case "%i":
+                                    if (s.data != null)
+                                        kvplRequestHeaders.addKeyValuePair((String) s.data, AccessLogRequestHeaderValue.getHeaderValue(response, request, s.data));
+                                case "%o":
+                                    if (s.data != null)
+                                        kvplResponseHeaders.addKeyValuePair((String) s.data, AccessLogResponseHeaderValue.getHeaderValue(response, request, s.data));
+                            }
+                        }
+                    }
+                    accessLogData.setFormatSpecifierList(formatSpecifiers);
+
+                    accessLogData.setRemoteIP(AccessLogRemoteIP.getRemoteIP(response, request, null), formatSpecifiers);
+                    accessLogData.setRequestHost(AccessLogLocalIP.getLocalIP(response, request, null), formatSpecifiers);
+                    accessLogData.setBytesSent(AccessLogResponseSize.getResponseSizeAsString(response, request, null), formatSpecifiers);
+                    accessLogData.setBytesReceived(AccessLogResponseSizeB.getBytesReceived(response, request, null), formatSpecifiers);
+                    accessLogData.setRequestElapsedTime(AccessLogElapsedTime.getElapsedTime(response, request, null), formatSpecifiers);
+                    accessLogData.setRemoteHost(AccessLogRemoteHost.getRemoteHostAddress(response, request, null), formatSpecifiers);
+                    accessLogData.setRequestProtocol(request.getVersion(), formatSpecifiers); // TODO check if it's better to use request directly or call helper function
+                    accessLogData.setRequestMethod(request.getMethod(), formatSpecifiers); // TODO check if it's better to use request directly or call helper function
+                    accessLogData.setRequestPort(AccessLogLocalPort.getLocalPort(response, request, null), formatSpecifiers);
+                    accessLogData.setQueryString(request.getQueryString(), formatSpecifiers); // TODO check if it's better to use request directly or call helper function
+                    accessLogData.setRequestFirstLine(AccessLogFirstLine.getFirstLineAsString(response, request, null), formatSpecifiers);
+                    accessLogData.setElapsedTime(AccessLogElapsedRequestTime.getElapsedRequestTime(response, request, null), formatSpecifiers);
+                    accessLogData.setResponseCode(response.getStatusCodeAsInt(), formatSpecifiers); // TODO check if it's better to use request directly or call helper function
+                    accessLogData.setRequestStartTime(AccessLogStartTime.getStartTimeAsString(response, request, null), formatSpecifiers);
+                    accessLogData.setAccessLogDatetime(AccessLogCurrentTime.getAccessLogCurrentTimeAsString(response, request, null), formatSpecifiers);
+                    accessLogData.setRemoteUser(AccessLogRemoteUser.getRemoteUser(response, request, null), formatSpecifiers);
+                    accessLogData.setUriPath(request.getRequestURI(), formatSpecifiers); // TODO check if it's better to use request directly or call helper function
+
+                    if (kvplCookies.getList().size() > 0)
+                        accessLogData.setCookies(kvplCookies);
+                    if (kvplRequestHeaders.getList().size() > 0)
+                        accessLogData.setRequestHeader(kvplRequestHeaders);
+                    if (kvplResponseHeaders.getList().size() > 0)
+                        accessLogData.setResponseHeader(kvplResponseHeaders);
+                    // LG 265 end
+                }
+                if (AccessLogData.isCustomAccessLogToJSONEnabled.equals("default") || AccessLogData.isCustomAccessLogToJSONEnabledCollector.equals("default")) {
+                    accessLogData.setRequestStartTime(requestStartTimeVal);
+                    accessLogData.setUriPath(request.getRequestURI());
+                    accessLogData.setRequestMethod(request.getMethod());
+                    accessLogData.setQueryString(request.getQueryString());
+                    accessLogData.setRequestHost(recordData.getLocalIP());
+                    accessLogData.setRequestPort(recordData.getLocalPort());
+                    accessLogData.setRemoteHost(recordData.getRemoteAddress());
+                    accessLogData.setRequestProtocol(request.getVersion());
+                    accessLogData.setBytesReceived(recordData.getBytesWritten());
+                    accessLogData.setResponseCode(response.getStatusCodeAsInt());
+                    accessLogData.setElapsedTime(recordData.getElapsedTime());
+                }
+
+                // These fields aren't in logFormat, so they'll always show up
+                accessLogData.setDatetime(recordData.getTimestamp());
+                accessLogData.setUserAgent(request.getHeader(USER_AGENT_HEADER).asString());
 
                 String sequenceVal = requestStartTimeVal + "_" + String.format("%013X", seq.incrementAndGet());
                 accessLogData.setSequence(sequenceVal);
