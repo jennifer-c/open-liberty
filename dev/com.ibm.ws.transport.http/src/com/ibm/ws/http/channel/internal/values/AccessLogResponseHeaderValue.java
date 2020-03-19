@@ -53,7 +53,7 @@ public class AccessLogResponseHeaderValue extends AccessLogData {
         String headerName = (String) data;
         String headerValue = null;
         if (headerName != null) {
-            headerValue = request.getHeader(headerName).asString();
+            headerValue = response.getHeader(headerName).asString();
         }
         // Could be null - if it's null, don't print to JSON
         return headerValue;
