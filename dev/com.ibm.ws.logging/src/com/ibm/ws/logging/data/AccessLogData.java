@@ -11,7 +11,6 @@
 package com.ibm.ws.logging.data;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import com.ibm.ws.logging.collector.LogFieldConstants;
@@ -46,7 +45,6 @@ public class AccessLogData extends GenericData {
                                               LogFieldConstants.IBM_REQUESTHEADER,
                                               LogFieldConstants.IBM_RESPONSEHEADER,
                                               LogFieldConstants.IBM_REQUESTFIRSTLINE,
-                                              LogFieldConstants.IBM_REQUESTSTARTTIME,
                                               LogFieldConstants.IBM_ACCESSLOGDATETIME,
                                               LogFieldConstants.IBM_REMOTEUSERID
 
@@ -74,22 +72,17 @@ public class AccessLogData extends GenericData {
                                             LogFieldConstants.REQUESTHEADER,
                                             LogFieldConstants.RESPONSEHEADER,
                                             LogFieldConstants.REQUESTFIRSTLINE,
-                                            LogFieldConstants.REQUESTSTARTTIME,
                                             LogFieldConstants.ACCESSLOGDATETIME,
                                             LogFieldConstants.REMOTEUSERID
     };
 
     private static NameAliases jsonLoggingNameAliases = new NameAliases(NAMES1_1);
-    // lg265 testing
+
     public static String isCustomAccessLogToJSONEnabled = "";
     public static String isCustomAccessLogToJSONEnabledCollector = "";
-    public List<String> formatSpecifiers;
+    public boolean[] formatSpecifiers = new boolean[NAMES1_1.length];
 
-    public void setFormatSpecifierList(List<String> formatSpecifiers) {
-        this.formatSpecifiers = formatSpecifiers;
-    }
-
-    public List<String> getFormatSpecifierList() {
+    public boolean[] getFormatSpecifierList() {
         return formatSpecifiers;
     }
 
@@ -117,17 +110,22 @@ public class AccessLogData extends GenericData {
         setPair(index, NAMES1_1[index], l);
     }
 
-//    public void setRequestStartTime(HashMap<String, String> map, long l) {
-//
-//    }
+    public void setRequestStartTime(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%t")) {
+            setRequestStartTime(s);
+            this.formatSpecifiers[0] = true;
+        }
+    }
 
-    public void setRequestStartTime(long l) {
-        setPair(0, l);
+    public void setRequestStartTime(String s) {
+        setPair(0, s);
     }
 
     public void setUriPath(String s, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%U"))
+        if (formatSpecifiers.contains("%U")) {
             setUriPath(s);
+            this.formatSpecifiers[1] = true;
+        }
     }
 
     public void setUriPath(String s) {
@@ -135,8 +133,10 @@ public class AccessLogData extends GenericData {
     }
 
     public void setRequestMethod(String s, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%m"))
+        if (formatSpecifiers.contains("%m")) {
             setRequestMethod(s);
+            this.formatSpecifiers[2] = true;
+        }
     }
 
     public void setRequestMethod(String s) {
@@ -144,8 +144,10 @@ public class AccessLogData extends GenericData {
     }
 
     public void setQueryString(String s, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%q"))
+        if (formatSpecifiers.contains("%q")) {
             setQueryString(s);
+            this.formatSpecifiers[3] = true;
+        }
     }
 
     public void setQueryString(String s) {
@@ -153,8 +155,10 @@ public class AccessLogData extends GenericData {
     }
 
     public void setRequestHost(String s, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%A"))
+        if (formatSpecifiers.contains("%A")) {
             setRequestHost(s);
+            this.formatSpecifiers[4] = true;
+        }
     }
 
     public void setRequestHost(String s) {
@@ -162,8 +166,10 @@ public class AccessLogData extends GenericData {
     }
 
     public void setRequestPort(String s, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%p"))
+        if (formatSpecifiers.contains("%p")) {
             setRequestPort(s);
+            this.formatSpecifiers[5] = true;
+        }
     }
 
     public void setRequestPort(String s) {
@@ -171,22 +177,32 @@ public class AccessLogData extends GenericData {
     }
 
     public void setRemoteHost(String s, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%h"))
-            setRequestFirstLine(s);
+        if (formatSpecifiers.contains("%h")) {
+            setRemoteHost(s);
+            this.formatSpecifiers[6] = true;
+        }
     }
 
     public void setRemoteHost(String s) {
         setPair(6, s);
     }
 
-    // User agent isn't part of logFormat
+    public void setUserAgent(String s, ArrayList<String> formatSpecifiers) {
+        if (formatSpecifiers.contains("%i")) {
+            setUserAgent(s);
+            this.formatSpecifiers[7] = true;
+        }
+    }
+
     public void setUserAgent(String s) {
         setPair(7, s);
     }
 
     public void setRequestProtocol(String s, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%H"))
+        if (formatSpecifiers.contains("%H")) {
             setRequestProtocol(s);
+            this.formatSpecifiers[8] = true;
+        }
     }
 
     public void setRequestProtocol(String s) {
@@ -194,8 +210,10 @@ public class AccessLogData extends GenericData {
     }
 
     public void setBytesReceived(long l, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%B"))
+        if (formatSpecifiers.contains("%B")) {
             setBytesReceived(l);
+            this.formatSpecifiers[9] = true;
+        }
     }
 
     public void setBytesReceived(long l) {
@@ -203,8 +221,10 @@ public class AccessLogData extends GenericData {
     }
 
     public void setResponseCode(int i, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%s"))
+        if (formatSpecifiers.contains("%s")) {
             setResponseCode(i);
+            this.formatSpecifiers[10] = true;
+        }
     }
 
     public void setResponseCode(int i) {
@@ -212,8 +232,10 @@ public class AccessLogData extends GenericData {
     }
 
     public void setElapsedTime(long l, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%{R}W"))
+        if (formatSpecifiers.contains("%{R}W")) {
             setElapsedTime(l);
+            this.formatSpecifiers[11] = true;
+        }
     }
 
     public void setElapsedTime(long l) {
@@ -232,8 +254,10 @@ public class AccessLogData extends GenericData {
 
     // LG-265
     public void setRemoteIP(String s, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%a"))
+        if (formatSpecifiers.contains("%a")) {
             setRemoteIP(s);
+            this.formatSpecifiers[14] = true;
+        }
     }
 
     public void setRemoteIP(String s) {
@@ -241,8 +265,10 @@ public class AccessLogData extends GenericData {
     }
 
     public void setBytesSent(String s, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%b"))
+        if (formatSpecifiers.contains("%b")) {
             setBytesSent(s);
+            this.formatSpecifiers[15] = true;
+        }
     }
 
     public void setBytesSent(String s) {
@@ -251,11 +277,14 @@ public class AccessLogData extends GenericData {
 
     public void setCookies(KeyValuePairList kvps) {
         setPair(16, kvps);
+        this.formatSpecifiers[16] = true;
     }
 
     public void setRequestElapsedTime(long l, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%D"))
+        if (formatSpecifiers.contains("%D")) {
             setRequestElapsedTime(l);
+            this.formatSpecifiers[17] = true;
+        }
     }
 
     public void setRequestElapsedTime(long l) {
@@ -264,53 +293,51 @@ public class AccessLogData extends GenericData {
 
     public void setRequestHeader(KeyValuePairList kvps) {
         setPair(18, kvps);
+        this.formatSpecifiers[18] = true;
     }
 
     public void setResponseHeader(KeyValuePairList kvps) {
         setPair(19, kvps);
+        this.formatSpecifiers[19] = true;
     }
 
     public void setRequestFirstLine(String s, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%r"))
+        if (formatSpecifiers.contains("%r")) {
             setRequestFirstLine(s);
+            this.formatSpecifiers[20] = true;
+        }
     }
 
     public void setRequestFirstLine(String s) {
         setPair(20, s);
     }
 
-    public void setRequestStartTime(String s, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%t"))
-            setRequestFirstLine(s);
-    }
-
-    public void setRequestStartTime(String s) {
-        setPair(21, s);
-    }
-
     public void setAccessLogDatetime(String s, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%{t}W"))
+        if (formatSpecifiers.contains("%{t}W")) {
             setAccessLogDatetime(s);
+            this.formatSpecifiers[21] = true;
+        }
     }
 
     public void setAccessLogDatetime(String s) {
-        setPair(22, s);
+        setPair(21, s);
     }
 
     public void setRemoteUser(String s, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%u"))
+        if (formatSpecifiers.contains("%u")) {
             setRemoteUser(s);
+            this.formatSpecifiers[22] = true;
+        }
     }
 
     public void setRemoteUser(String s) {
-        setPair(23, s);
+        setPair(22, s);
     }
     // END LG-265
 
-    // Check if release bug or optional field
-//    public long getRequestStartTime() {
-//        return getLongValue(0);
-//    }
+    public String getRequestStartTime() {
+        return getStringValue(0);
+    }
 
     public String getUriPath() {
         return getStringValue(1);
@@ -417,25 +444,21 @@ public class AccessLogData extends GenericData {
         return getStringValue(20);
     }
 
-    public String getRequestStartTime() {
+    public String getAccessLogDatetime() {
         return getStringValue(21);
     }
 
-    public String getAccessLogDatetime() {
-        return getStringValue(22);
-    }
-
     public String getRemoteUser() {
-        return getStringValue(23);
+        return getStringValue(22);
     }
 
     private KeyValuePairList getValues(int index) {
         return (KeyValuePairList) getPairs()[index];
     }
 
-//    public String getRequestStartTimeKey() {
-//        return NAMES[0];
-//    }
+    public String getRequestStartTimeKey() {
+        return NAMES[0];
+    }
 
     public String getUriPathKey() {
         return NAMES[1];
@@ -518,16 +541,12 @@ public class AccessLogData extends GenericData {
         return NAMES[20];
     }
 
-    public String getRequestStartTimeKey() {
+    public String getAccessLogDatetimeKey() {
         return NAMES[21];
     }
 
-    public String getAccessLogDatetimeKey() {
-        return NAMES[22];
-    }
-
     public String getRemoteUserKey() {
-        return NAMES[23];
+        return NAMES[22];
     }
     // LG 265
 
@@ -589,10 +608,9 @@ public class AccessLogData extends GenericData {
 
     //name aliases
 
-    // TODO: Maybe uncomment this later? -> see if this is a release bug or an optional field
-//    public static String getRequestStartTimeKeyJSON() {
-//        return jsonLoggingNameAliases.aliases[0];
-//    }
+    public static String getRequestStartTimeKeyJSON() {
+        return jsonLoggingNameAliases.aliases[0];
+    }
 
     public static String getUriPathKeyJSON() {
         return jsonLoggingNameAliases.aliases[1];
@@ -691,16 +709,12 @@ public class AccessLogData extends GenericData {
         return jsonLoggingNameAliases.aliases[24];
     }
 
-    public static String getRequestStartTimeKeyJSON() {
+    public static String getAccessLogDatetimeKeyJSON() {
         return jsonLoggingNameAliases.aliases[25];
     }
 
-    public static String getAccessLogDatetimeKeyJSON() {
-        return jsonLoggingNameAliases.aliases[26];
-    }
-
     public static String getRemoteUserKeyJSON() {
-        return jsonLoggingNameAliases.aliases[27];
+        return jsonLoggingNameAliases.aliases[26];
     }
     // END LG-265
 }
