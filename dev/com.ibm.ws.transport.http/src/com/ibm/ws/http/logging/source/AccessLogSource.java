@@ -158,34 +158,37 @@ public class AccessLogSource implements Source {
                                                 kvplCookies.addKeyValuePair(c.getName(), c.getValue());
                                         }
                                     }
+                                    break;
                                 case "%i":
-                                    if (s.data != null)
+                                    if (s.data.equals(USER_AGENT_HEADER))
+                                        accessLogData.setUserAgent(request.getHeader(USER_AGENT_HEADER).asString(), formatSpecifiers);
+                                    else if (s.data != null)
                                         kvplRequestHeaders.addKeyValuePair((String) s.data, AccessLogRequestHeaderValue.getHeaderValue(response, request, s.data));
+                                    break;
                                 case "%o":
                                     if (s.data != null)
                                         kvplResponseHeaders.addKeyValuePair((String) s.data, AccessLogResponseHeaderValue.getHeaderValue(response, request, s.data));
+                                    break;
                             }
                         }
                     }
-                    accessLogData.setFormatSpecifierList(formatSpecifiers);
-
                     accessLogData.setRemoteIP(AccessLogRemoteIP.getRemoteIP(response, request, null), formatSpecifiers);
                     accessLogData.setRequestHost(AccessLogLocalIP.getLocalIP(response, request, null), formatSpecifiers);
                     accessLogData.setBytesSent(AccessLogResponseSize.getResponseSizeAsString(response, request, null), formatSpecifiers);
                     accessLogData.setBytesReceived(AccessLogResponseSizeB.getBytesReceived(response, request, null), formatSpecifiers);
                     accessLogData.setRequestElapsedTime(AccessLogElapsedTime.getElapsedTime(response, request, null), formatSpecifiers);
                     accessLogData.setRemoteHost(AccessLogRemoteHost.getRemoteHostAddress(response, request, null), formatSpecifiers);
-                    accessLogData.setRequestProtocol(request.getVersion(), formatSpecifiers); // TODO check if it's better to use request directly or call helper function
-                    accessLogData.setRequestMethod(request.getMethod(), formatSpecifiers); // TODO check if it's better to use request directly or call helper function
+                    accessLogData.setRequestProtocol(request.getVersion(), formatSpecifiers);
+                    accessLogData.setRequestMethod(request.getMethod(), formatSpecifiers);
                     accessLogData.setRequestPort(AccessLogLocalPort.getLocalPort(response, request, null), formatSpecifiers);
-                    accessLogData.setQueryString(request.getQueryString(), formatSpecifiers); // TODO check if it's better to use request directly or call helper function
+                    accessLogData.setQueryString(request.getQueryString(), formatSpecifiers);
                     accessLogData.setRequestFirstLine(AccessLogFirstLine.getFirstLineAsString(response, request, null), formatSpecifiers);
                     accessLogData.setElapsedTime(AccessLogElapsedRequestTime.getElapsedRequestTime(response, request, null), formatSpecifiers);
-                    accessLogData.setResponseCode(response.getStatusCodeAsInt(), formatSpecifiers); // TODO check if it's better to use request directly or call helper function
+                    accessLogData.setResponseCode(response.getStatusCodeAsInt(), formatSpecifiers);
                     accessLogData.setRequestStartTime(AccessLogStartTime.getStartTimeAsString(response, request, null), formatSpecifiers);
                     accessLogData.setAccessLogDatetime(AccessLogCurrentTime.getAccessLogCurrentTimeAsString(response, request, null), formatSpecifiers);
                     accessLogData.setRemoteUser(AccessLogRemoteUser.getRemoteUser(response, request, null), formatSpecifiers);
-                    accessLogData.setUriPath(request.getRequestURI(), formatSpecifiers); // TODO check if it's better to use request directly or call helper function
+                    accessLogData.setUriPath(request.getRequestURI(), formatSpecifiers);
 
                     if (kvplCookies.getList().size() > 0)
                         accessLogData.setCookies(kvplCookies);
@@ -196,7 +199,7 @@ public class AccessLogSource implements Source {
                     // LG 265 end
                 }
                 if (AccessLogData.isCustomAccessLogToJSONEnabled.equals("default") || AccessLogData.isCustomAccessLogToJSONEnabledCollector.equals("default")) {
-                    accessLogData.setRequestStartTime(requestStartTimeVal);
+                    accessLogData.setRequestStartTime(Long.toString(requestStartTimeVal));
                     accessLogData.setUriPath(request.getRequestURI());
                     accessLogData.setRequestMethod(request.getMethod());
                     accessLogData.setQueryString(request.getQueryString());
@@ -207,11 +210,11 @@ public class AccessLogSource implements Source {
                     accessLogData.setBytesReceived(recordData.getBytesWritten());
                     accessLogData.setResponseCode(response.getStatusCodeAsInt());
                     accessLogData.setElapsedTime(recordData.getElapsedTime());
+                    accessLogData.setUserAgent(request.getHeader(USER_AGENT_HEADER).asString());
                 }
 
                 // These fields aren't in logFormat, so they'll always show up
                 accessLogData.setDatetime(recordData.getTimestamp());
-                accessLogData.setUserAgent(request.getHeader(USER_AGENT_HEADER).asString());
 
                 String sequenceVal = requestStartTimeVal + "_" + String.format("%013X", seq.incrementAndGet());
                 accessLogData.setSequence(sequenceVal);

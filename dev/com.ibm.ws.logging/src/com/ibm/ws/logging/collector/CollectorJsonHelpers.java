@@ -93,6 +93,14 @@ public class CollectorJsonHelpers {
         }
     };
 
+    // Only the jsonifyAccess function uses this variant
+    protected static boolean addToJSON(StringBuilder sb, String name, String value, boolean jsonEscapeName,
+                                       boolean jsonEscapeValue, boolean trim, boolean isFirstField, boolean isQuoteless, boolean isPartOfLogFormat) {
+        if (isPartOfLogFormat && value != null)
+            return (addToJSON(sb, name, value, jsonEscapeName, jsonEscapeValue, trim, isFirstField, isQuoteless));
+        return false;
+    }
+
     protected static boolean addToJSON(StringBuilder sb, String name, String value, boolean jsonEscapeName,
                                        boolean jsonEscapeValue, boolean trim, boolean isFirstField) {
 
