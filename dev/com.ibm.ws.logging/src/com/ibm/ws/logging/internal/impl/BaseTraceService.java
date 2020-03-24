@@ -335,6 +335,7 @@ public class BaseTraceService implements TrService {
         // lg265
         TraceComponent tc = Tr.register(LogTraceData.class, NLSConstants.GROUP, NLSConstants.LOGGING_NLS);
         jsonAccessLogFields = trConfig.getjsonAccessLogFields();
+
         if (jsonAccessLogFields != AccessLogData.isCustomAccessLogToJSONEnabled) {
             AccessLogData.isCustomAccessLogToJSONEnabled = jsonAccessLogFields;
         }
