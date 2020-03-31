@@ -11,30 +11,19 @@
 package com.ibm.ws.http.logging.source;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.ibm.websphere.ras.Tr;
 import com.ibm.websphere.ras.TraceComponent;
-import com.ibm.ws.http.channel.internal.values.AccessLogCurrentTime;
-import com.ibm.ws.http.channel.internal.values.AccessLogElapsedRequestTime;
-import com.ibm.ws.http.channel.internal.values.AccessLogElapsedTime;
-import com.ibm.ws.http.channel.internal.values.AccessLogFirstLine;
-import com.ibm.ws.http.channel.internal.values.AccessLogLocalIP;
-import com.ibm.ws.http.channel.internal.values.AccessLogLocalPort;
-import com.ibm.ws.http.channel.internal.values.AccessLogRemoteHost;
 import com.ibm.ws.http.channel.internal.values.AccessLogRemoteIP;
-import com.ibm.ws.http.channel.internal.values.AccessLogRemoteUser;
 import com.ibm.ws.http.channel.internal.values.AccessLogRequestCookie;
-import com.ibm.ws.http.channel.internal.values.AccessLogRequestHeaderValue;
-import com.ibm.ws.http.channel.internal.values.AccessLogResponseHeaderValue;
 import com.ibm.ws.http.channel.internal.values.AccessLogResponseSize;
-import com.ibm.ws.http.channel.internal.values.AccessLogResponseSizeB;
-import com.ibm.ws.http.channel.internal.values.AccessLogStartTime;
 import com.ibm.ws.http.logging.internal.AccessLogger.FormatSegment;
 import com.ibm.ws.logging.data.AccessLogData;
-import com.ibm.ws.logging.data.KeyValuePairList;
+import com.ibm.ws.logging.data.AccessLogDataFormatter;
 import com.ibm.wsspi.collector.manager.BufferManager;
 import com.ibm.wsspi.collector.manager.Source;
 import com.ibm.wsspi.http.HttpCookie;
@@ -54,6 +43,31 @@ public class AccessLogSource implements Source {
     private final String sourceName = "com.ibm.ws.http.logging.source.accesslog";
     private final String location = "memory";
     private static String USER_AGENT_HEADER = "User-Agent";
+    ///// NEW
+
+    private static Map<FormatSegment[], SetterFormatter> setterFormatterMap = new HashMap<FormatSegment[], SetterFormatter>();
+
+    private static class SetterFormatter {
+        List<AccessLogDataFieldSetter> setters;
+        AccessLogDataFormatter[] formatters = { null, null, null };
+
+        void addSetters(List<AccessLogDataFieldSetter> setters) {
+            this.setters = setters;
+        }
+
+        void addFormatters(AccessLogDataFormatter[] formatters) {
+            this.formatters = formatters;
+        }
+
+        List<AccessLogDataFieldSetter> getSetters() {
+            return this.setters;
+        }
+
+        AccessLogDataFormatter[] getFormatters() {
+            return this.formatters;
+        }
+    }
+    //// END
 
     private BufferManager bufferMgr = null;
     private AccessLogHandler accessLogHandler;
@@ -126,78 +140,80 @@ public class AccessLogSource implements Source {
         /** {@inheritDoc} */
         @Override
         public void process(AccessLogRecordData recordData, FormatSegment[] parsedFormat) {
+
+            // Should we make the Map as <FormatSegment[], SetterFormatter>? Is it even possible to check if a key exists when comparing arrays?
+            // TODO implement the caching
+            SetterFormatter currentSF;
+            if (setterFormatterMap.containsKey("TODO GOES STRAIGHT TO ELSE CURRENTLY")) {
+                currentSF = setterFormatterMap.get(parsedFormat); // get the formatter and setter
+            } else {
+                SetterFormatter newSF = new SetterFormatter();
+                List<AccessLogDataFieldSetter> fieldSetters = new ArrayList<AccessLogDataFieldSetter>();
+                AccessLogDataFormatter[] formatters = { new AccessLogDataFormatter(), new AccessLogDataFormatter(), new AccessLogDataFormatter() };
+                for (FormatSegment s : parsedFormat) {
+                    if (s.log != null) {
+                        switch (s.log.getName()) {
+                            case "%a":
+                                fieldSetters.add((a, d) -> a.setRemoteIP(AccessLogRemoteIP.getRemoteIP(d.getResponse(), d.getRequest(), s.data)));
+                                formatters[1].add((j, a) -> {
+                                    j.addField(AccessLogData.getRemoteIPKeyJSON(), a.getRemoteIP(), false, false);
+                                    return j;
+                                });
+                                break;
+                            case "%b":
+                                fieldSetters.add((a, d) -> a.setBytesSent(AccessLogResponseSize.getResponseSizeAsString(d.getResponse(), d.getRequest(), s.data)));
+                                formatters[1].add((j, a) -> {
+                                    j.addField(AccessLogData.getBytesSentKeyJSON(), a.getBytesSent(), false, false);
+                                    return j;
+                                });
+                                break;
+
+                            // For this case, should we check that getCookie is not null *before* putting it into the setter/formatter list?
+                            case "%C":
+                                if (s.data != null) {
+                                    fieldSetters.add((a, d) -> {
+                                        HttpCookie c = AccessLogRequestCookie.getCookie(d.getResponse(), d.getRequest(), s.data);
+                                        if (c != null)
+                                            a.setCookies(c.getName(), c.getValue());
+                                    });
+                                } else {
+                                    fieldSetters.add((a, d) -> {
+                                        AccessLogRequestCookie.getAllCookies(d.getResponse(), d.getRequest(), null).forEach(c -> a.setCookies(c.getName(), c.getValue()));
+                                    });
+                                }
+                                formatters[1].add((j, a) -> {
+                                    if (a.getCookies() != null)
+                                        a.getCookies().getList().forEach(c -> j.addField(AccessLogData.getCookieKeyJSON(c), c.getStringValue(), false, false));
+                                    return j;
+                                });
+                        }
+                    }
+                }
+                // TODO default formatters
+                newSF.addSetters(fieldSetters);
+                newSF.addFormatters(formatters);
+                // make new formatter and setter, then
+                // add key into map
+                currentSF = newSF;
+            }
+
+            AccessLogData accessLogData = new AccessLogData();
+            for (AccessLogDataFieldSetter s : currentSF.setters) {
+                s.add(accessLogData, recordData);
+            }
+
+            accessLogData.addFormatters(currentSF.formatters);
+            // collectorJSONUtils does the rest of the work from here
+
+            // * --------------------------------original-------------------------------- * //
+
             HttpRequestMessage request = recordData.getRequest();
             HttpResponseMessage response = recordData.getResponse();
-            KeyValuePairList kvplCookies = new KeyValuePairList("cookies");
-            KeyValuePairList kvplRequestHeaders = new KeyValuePairList("requestHeaders");
-            KeyValuePairList kvplResponseHeaders = new KeyValuePairList("responseHeaders");
-            ArrayList<String> formatSpecifiers = new ArrayList<String>();
 
             if (request != null) {
 
-                AccessLogData accessLogData = new AccessLogData();
-
                 long requestStartTimeVal = recordData.getStartTime(); // needed for sequence
-                // LG 265
-                if (AccessLogData.isCustomAccessLogToJSONEnabled.equals("logFormat") || AccessLogData.isCustomAccessLogToJSONEnabledCollector.equals("logFormat")) {
-                    for (FormatSegment s : parsedFormat) {
-                        if (s.log != null) {
-                            String formatSpecifier = s.log.getName();
-                            formatSpecifiers.add(formatSpecifier);
-                            switch (formatSpecifier) {
-                                case "%C":
-                                    if (s.data != null) {
-                                        HttpCookie c = AccessLogRequestCookie.getCookie(response, request, s.data);
-                                        if (c != null)
-                                            kvplCookies.addKeyValuePair(c.getName(), c.getValue());
-                                    } else {
-                                        // If data is null, they specified %C without a cookie name, which returns all cookies
-                                        List<HttpCookie> cookies = AccessLogRequestCookie.getAllCookies(response, request, null);
-                                        for (HttpCookie c : cookies) {
-                                            if (c != null)
-                                                kvplCookies.addKeyValuePair(c.getName(), c.getValue());
-                                        }
-                                    }
-                                    break;
-                                case "%i":
-                                    if (s.data.equals(USER_AGENT_HEADER))
-                                        accessLogData.setUserAgent(request.getHeader(USER_AGENT_HEADER).asString(), formatSpecifiers);
-                                    else if (s.data != null)
-                                        kvplRequestHeaders.addKeyValuePair((String) s.data, AccessLogRequestHeaderValue.getHeaderValue(response, request, s.data));
-                                    break;
-                                case "%o":
-                                    if (s.data != null)
-                                        kvplResponseHeaders.addKeyValuePair((String) s.data, AccessLogResponseHeaderValue.getHeaderValue(response, request, s.data));
-                                    break;
-                            }
-                        }
-                    }
-                    accessLogData.setRemoteIP(AccessLogRemoteIP.getRemoteIP(response, request, null), formatSpecifiers);
-                    accessLogData.setRequestHost(AccessLogLocalIP.getLocalIP(response, request, null), formatSpecifiers);
-                    accessLogData.setBytesSent(AccessLogResponseSize.getResponseSizeAsString(response, request, null), formatSpecifiers);
-                    accessLogData.setBytesReceived(AccessLogResponseSizeB.getBytesReceived(response, request, null), formatSpecifiers);
-                    accessLogData.setRequestElapsedTime(AccessLogElapsedTime.getElapsedTime(response, request, null), formatSpecifiers);
-                    accessLogData.setRemoteHost(AccessLogRemoteHost.getRemoteHostAddress(response, request, null), formatSpecifiers);
-                    accessLogData.setRequestProtocol(request.getVersion(), formatSpecifiers);
-                    accessLogData.setRequestMethod(request.getMethod(), formatSpecifiers);
-                    accessLogData.setRequestPort(AccessLogLocalPort.getLocalPort(response, request, null), formatSpecifiers);
-                    accessLogData.setQueryString(request.getQueryString(), formatSpecifiers);
-                    accessLogData.setRequestFirstLine(AccessLogFirstLine.getFirstLineAsString(response, request, null), formatSpecifiers);
-                    accessLogData.setElapsedTime(AccessLogElapsedRequestTime.getElapsedRequestTime(response, request, null), formatSpecifiers);
-                    accessLogData.setResponseCode(response.getStatusCodeAsInt(), formatSpecifiers);
-                    accessLogData.setRequestStartTime(AccessLogStartTime.getStartTimeAsString(response, request, null), formatSpecifiers);
-                    accessLogData.setAccessLogDatetime(AccessLogCurrentTime.getAccessLogCurrentTimeAsString(response, request, null), formatSpecifiers);
-                    accessLogData.setRemoteUser(AccessLogRemoteUser.getRemoteUser(response, request, null), formatSpecifiers);
-                    accessLogData.setUriPath(request.getRequestURI(), formatSpecifiers);
 
-                    if (kvplCookies.getList().size() > 0)
-                        accessLogData.setCookies(kvplCookies);
-                    if (kvplRequestHeaders.getList().size() > 0)
-                        accessLogData.setRequestHeader(kvplRequestHeaders);
-                    if (kvplResponseHeaders.getList().size() > 0)
-                        accessLogData.setResponseHeader(kvplResponseHeaders);
-                    // LG 265 end
-                }
                 if (AccessLogData.isCustomAccessLogToJSONEnabled.equals("default") || AccessLogData.isCustomAccessLogToJSONEnabledCollector.equals("default")) {
                     accessLogData.setRequestStartTime(Long.toString(requestStartTimeVal));
                     accessLogData.setUriPath(request.getRequestURI());

@@ -141,7 +141,6 @@ public class CollectorJsonUtils_JSON {
         if (tags != null) {
             jsonBuilder.addField("\"ibm_tags\":", CollectorJsonHelpers.jsonifyTags(tags), false, false);
         }
-
         return jsonBuilder.build().toString();
     }
 
