@@ -16,5 +16,11 @@ import com.ibm.ws.http.logging.internal.AccessLogger.FormatSegment;
  * The Access log forwarder is invoked after each http request.
  */
 public interface AccessLogForwarder {
-    public void process(AccessLogRecordData logData, FormatSegment[] parsedFormat);
+    /**
+     *
+     * @param logData
+     * @param parsedFormat A parsed version of logFormat
+     * @param formatString The original logFormat string
+     */
+    public void process(AccessLogRecordData logData, FormatSegment[] parsedFormat, String formatString);
 }

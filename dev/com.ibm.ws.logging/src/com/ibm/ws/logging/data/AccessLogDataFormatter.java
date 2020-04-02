@@ -20,8 +20,9 @@ import com.ibm.ws.logging.data.JSONObject.JSONObjectBuilder;
 public class AccessLogDataFormatter {
     enum Format {
         FORMATTER_DEFAULT_JSON,
-        FORMATTER_CUSTOM_JSON,
-        // FORMATTER_LOGSTASH_COLLECTOR_1.0_JSON
+        FORMATTER_CUSTOM_JSON
+        // FORMATTER_LOGSTASH_COLLECTOR_1.0_DEFAULT
+        // FORMATTER_LOGSTASH_COLLECTOR_1.0_CUSTOM
     }
 
     public AccessLogDataFormatter() {
@@ -32,7 +33,6 @@ public class AccessLogDataFormatter {
     private final ArrayList<JsonFieldAdder> jsonFieldAdders = new ArrayList<JsonFieldAdder>();
 
     // adds another JsonFieldAdder to the list
-    // why return obj, and not void?
     public AccessLogDataFormatter add(JsonFieldAdder jsonFieldAdder) {
         this.jsonFieldAdders.add(jsonFieldAdder);
         return this;

@@ -79,6 +79,22 @@ public class JSONObject {
             return this;
         }
 
+//        /**
+//         * Add raw String field value
+//         */
+//        public JSONObjectBuilder addRaw(String value) {
+//            jsonBuilder.append(value);
+//            return this;
+//        }
+
+        /**
+         * Add raw String field value
+         */
+        public JSONObjectBuilder addField(String name, String value, boolean jsonEscapeName) {
+            appendNameValue(name, value, jsonEscapeName, false, true);
+            return this;
+        }
+
         /**
          * Add Integer field value
          */

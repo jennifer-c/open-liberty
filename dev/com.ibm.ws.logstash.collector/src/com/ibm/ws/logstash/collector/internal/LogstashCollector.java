@@ -35,6 +35,7 @@ import com.ibm.ws.collector.Collector;
 import com.ibm.ws.collector.Target;
 import com.ibm.ws.collector.TaskManager;
 import com.ibm.ws.logging.collector.CollectorJsonUtils;
+import com.ibm.ws.logging.data.AccessLogData;
 import com.ibm.ws.logstash.collector.LogstashRuntimeVersion;
 import com.ibm.ws.lumberjack.LumberjackEvent;
 import com.ibm.ws.lumberjack.LumberjackEvent.Entry;
@@ -85,6 +86,8 @@ public class LogstashCollector extends Collector {
     private TaskManager taskMgr = null;
 
     private String logstashVersion;
+
+    private String jsonAccessLogFields;
 
     @Override
     @Reference(name = EXECUTOR_SERVICE, service = ExecutorService.class)
@@ -138,6 +141,7 @@ public class LogstashCollector extends Collector {
         logstashVersionServiceRef.activate(cc);
         variableRegistryServiceRef.activate(cc);
         setLogstashVersion();
+        setJsonAccessLogFields(configuration);
         //Get the server instance details
         setServerInfo(configuration);
         setConfigInfo(configuration);
@@ -166,6 +170,7 @@ public class LogstashCollector extends Collector {
         setServerInfo(configuration);
         setConfigInfo(configuration);
         validateSources(configuration);
+        setJsonAccessLogFields(configuration);
         if (taskMgr != null) {
             taskMgr.updateConfig();
         }
@@ -190,6 +195,11 @@ public class LogstashCollector extends Collector {
 
     private void setConfigInfo(Map<String, Object> config) {
         taskMgr.setConfigInfo(config);
+    }
+
+    private void setJsonAccessLogFields(Map<String, Object> configuration) {
+        jsonAccessLogFields = (String) configuration.get("jsonAccessLogFields");
+        AccessLogData.isCustomAccessLogToJSONEnabledCollector = jsonAccessLogFields;
     }
 
     private void setServerInfo(Map<String, Object> configuration) {
@@ -248,20 +258,6 @@ public class LogstashCollector extends Collector {
 
         String eventType = CollectorJsonUtils.getEventType(source, location);
         String jsonStr = CollectorJsonUtils.jsonifyEvent(event, eventType, serverName, serverUserDir, serverHostName, logstashVersion, tags, maxFieldLength);
-        LumberjackEvent<String, String> lumberjackEvent = null;
-        if (!jsonStr.isEmpty()) {
-
-            lumberjackEvent = new LumberjackEvent<String, String>();
-            lumberjackEvent.add(new Entry<String, String>("line", jsonStr));
-            lumberjackEvent.add(new Entry<String, String>("type", eventType));
-        }
-        return lumberjackEvent;
-    }
-
-    public Object formatEvent(String source, String location, Object event, String[] tags, int maxFieldLength, String jsonAccessLogFields) {
-        String eventType = CollectorJsonUtils.getEventType(source, location);
-        String jsonStr = CollectorJsonUtils.jsonifyEvent(event, eventType, serverName, serverUserDir, serverHostName, logstashVersion, tags, maxFieldLength,
-                                                         jsonAccessLogFields);
         LumberjackEvent<String, String> lumberjackEvent = null;
         if (!jsonStr.isEmpty()) {
 

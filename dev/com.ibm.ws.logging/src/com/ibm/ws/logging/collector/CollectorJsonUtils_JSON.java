@@ -10,12 +10,11 @@
  *******************************************************************************/
 package com.ibm.ws.logging.collector;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 
 import com.ibm.websphere.ras.DataFormatHelper;
 import com.ibm.ws.logging.data.AccessLogData;
+import com.ibm.ws.logging.data.AccessLogDataFormatter;
 import com.ibm.ws.logging.data.AuditData;
 import com.ibm.ws.logging.data.FFDCData;
 import com.ibm.ws.logging.data.GenericData;
@@ -108,36 +107,21 @@ public class CollectorJsonUtils_JSON {
         AccessLogData accessLogData = (AccessLogData) event;
         JSONObjectBuilder jsonBuilder = CollectorJsonHelpers.startAccessLogJsonFields(hostName, wlpUserDir, serverName);
 
-        String jsonQueryString = accessLogData.getQueryString();
-        if (jsonQueryString != null) {
-            try {
-                jsonQueryString = URLDecoder.decode(jsonQueryString, LogFieldConstants.UTF_8);
-            } catch (UnsupportedEncodingException e) {
-                // ignore, use the original value;
-            }
+        AccessLogDataFormatter[] formatters = accessLogData.getFormatters();
+
+        if (AccessLogData.isCustomAccessLogToJSONEnabled.equals("logFormat")) {
+            formatters[1].populate(jsonBuilder, accessLogData);
         }
-        String userAgent = accessLogData.getUserAgent();
-        if (userAgent != null && userAgent.length() > MAX_USER_AGENT_LENGTH)
-            userAgent = userAgent.substring(0, MAX_USER_AGENT_LENGTH);
+
+        if (AccessLogData.isCustomAccessLogToJSONEnabled.equals("default")) {
+            formatters[0].populate(jsonBuilder, accessLogData);
+        }
 
         String datetime = CollectorJsonHelpers.dateFormatTL.get().format(accessLogData.getDatetime());
-
         //@formatter:off
-        jsonBuilder.addField(AccessLogData.getUriPathKeyJSON(), accessLogData.getUriPath(), false, true)
-        .addField(AccessLogData.getRequestMethodKeyJSON(), accessLogData.getRequestMethod(), false, true)
-        .addField(AccessLogData.getQueryStringKeyJSON(), jsonQueryString, false, true)
-        .addField(AccessLogData.getRequestHostKeyJSON(), accessLogData.getRequestHost(), false, true)
-        .addField(AccessLogData.getRequestPortKeyJSON(), accessLogData.getRequestPort(), false, true)
-        .addField(AccessLogData.getRemoteHostKeyJSON(), accessLogData.getRemoteHost(), false, true)
-        .addField(AccessLogData.getUserAgentKeyJSON(), userAgent, false, false)
-        .addField(AccessLogData.getRequestProtocolKeyJSON(), accessLogData.getRequestProtocol(), false, true)
-        .addField(AccessLogData.getBytesReceivedKeyJSON(), accessLogData.getBytesReceived(), false)
-        .addField(AccessLogData.getResponseCodeKeyJSON(), accessLogData.getResponseCode(), false)
-        .addField(AccessLogData.getElapsedTimeKeyJSON(), accessLogData.getElapsedTime(), false)
-        .addField(AccessLogData.getDatetimeKeyJSON(), datetime, false, true)
-        .addField(AccessLogData.getSequenceKeyJSON(), accessLogData.getSequence(), false, true);
+        jsonBuilder.addField(AccessLogData.getDatetimeKeyJSON(), datetime, false, true)
+                   .addField(AccessLogData.getSequenceKeyJSON(), accessLogData.getSequence(), false, true);
         //@formatter:on
-
         if (tags != null) {
             jsonBuilder.addField("\"ibm_tags\":", CollectorJsonHelpers.jsonifyTags(tags), false, false);
         }
