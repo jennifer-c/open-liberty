@@ -81,8 +81,10 @@ public class AccessLogData extends GenericData {
     public static String isCustomAccessLogToJSONEnabled = "";
     public static String isCustomAccessLogToJSONEnabledCollector = "";
     public boolean[] formatSpecifiers = new boolean[NAMES1_1.length];
-    public AccessLogDataFormatter[] formatters = new AccessLogDataFormatter[3];
+    public AccessLogDataFormatter[] formatters = new AccessLogDataFormatter[4];
     KeyValuePairList kvplCookies = new KeyValuePairList("cookies");
+    KeyValuePairList kvplRequestHeaders = new KeyValuePairList("requestHeaders");
+    KeyValuePairList kvplResponseHeaders = new KeyValuePairList("responseHeaders");
 
     public void addFormatters(AccessLogDataFormatter[] formatters) {
         this.formatters = formatters;
@@ -302,13 +304,15 @@ public class AccessLogData extends GenericData {
         setPair(17, l);
     }
 
-    public void setRequestHeader(KeyValuePairList kvps) {
-        setPair(18, kvps);
+    public void setRequestHeader(String name, String value) {
+        kvplRequestHeaders.addKeyValuePair(name, value);
+        setPair(18, kvplRequestHeaders);
         this.formatSpecifiers[18] = true;
     }
 
-    public void setResponseHeader(KeyValuePairList kvps) {
-        setPair(19, kvps);
+    public void setResponseHeader(String name, String value) {
+        kvplResponseHeaders.addKeyValuePair(name, value);
+        setPair(19, kvplResponseHeaders);
         this.formatSpecifiers[19] = true;
     }
 

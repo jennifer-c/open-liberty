@@ -29,8 +29,6 @@ public class TaskConfig {
 
     private final int maxEvents;
 
-    private final String jsonAccessLogFields;
-
     public static class Builder {
 
         /* Mandatory fields */
@@ -42,7 +40,7 @@ public class TaskConfig {
         private String[] tags;
         private int maxFieldLength;
         private int maxEvents;
-        private String jsonAccessLogFields = "";
+        private final String jsonAccessLogFields = "";
 
         public Builder(String source, String location) {
             this.source = source;
@@ -77,11 +75,6 @@ public class TaskConfig {
             return this;
         }
 
-        public Builder jsonAccessLogFields(String jsonAccessLogFields) {
-            this.jsonAccessLogFields = jsonAccessLogFields;
-            return this;
-        }
-
     }
 
     private TaskConfig(Builder builder) {
@@ -93,7 +86,6 @@ public class TaskConfig {
         tags = builder.tags;
         maxFieldLength = builder.maxFieldLength;
         maxEvents = builder.maxEvents;
-        jsonAccessLogFields = builder.jsonAccessLogFields;
     }
 
     public String sourceId() {
@@ -125,14 +117,10 @@ public class TaskConfig {
         return maxFieldLength;
     }
 
-    public String getjsonAccessLogFields() {
-        return jsonAccessLogFields;
-    }
-
     @Override
     public String toString() {
         return "TaskConfig [location=" + location + ", sourceName=" + sourceName + ", enabled=" + enabled + ", tags=" + ((tags != null) ? Arrays.toString(tags) : tags)
-               + ", maxFieldLength=" + maxFieldLength + ", maxEvents=" + maxEvents + ", jsonAccessLogFields=" + jsonAccessLogFields + "]";
+               + ", maxFieldLength=" + maxFieldLength + ", maxEvents=" + maxEvents + "]";
     }
 
 }

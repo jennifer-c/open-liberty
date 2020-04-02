@@ -1273,8 +1273,6 @@ public class BaseTraceService implements TrService {
         return serverHostName;
     }
 
-<<<<<<< HEAD
-=======
     /**
      * Escape \b, \f, \n, \r, \t, ", \, / characters and appends to a string builder
      *
@@ -1318,7 +1316,6 @@ public class BaseTraceService implements TrService {
         }
     }
 
->>>>>>> Working basic impl
     public final static class SystemLogHolder extends Level implements TraceWriter {
         private static final long serialVersionUID = 1L;
         transient final PrintStream originalStream;
