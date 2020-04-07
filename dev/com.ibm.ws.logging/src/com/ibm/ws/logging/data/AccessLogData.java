@@ -471,6 +471,100 @@ public class AccessLogData extends GenericData {
         return (KeyValuePairList) getPairs()[index];
     }
 
+    // We'll default to JSON if there's an invalid format
+    public String getRequestStartTimeKey(String format) {
+        return (format.equals("LOGSTASH")) ? NAMES[0] : jsonLoggingNameAliases.aliases[0];
+    }
+
+    public String getUriPathKey(String format) {
+        return (format.equals("LOGSTASH")) ? NAMES[1] : jsonLoggingNameAliases.aliases[1];
+    }
+
+    public String getRequestMethodKey(String format) {
+        return (format.equals("LOGSTASH")) ? NAMES[2] : jsonLoggingNameAliases.aliases[2];
+    }
+
+    public String getQueryStringKey(String format) {
+        return (format.equals("LOGSTASH")) ? NAMES[3] : jsonLoggingNameAliases.aliases[3];
+    }
+
+    public String getRequestHostKey(String format) {
+        return (format.equals("LOGSTASH")) ? NAMES[4] : jsonLoggingNameAliases.aliases[4];
+    }
+
+    public String getRequestPortKey(String format) {
+        return (format.equals("LOGSTASH")) ? NAMES[5] : jsonLoggingNameAliases.aliases[5];
+    }
+
+    public String getRemoteHostKey(String format) {
+        return (format.equals("LOGSTASH")) ? NAMES[6] : jsonLoggingNameAliases.aliases[6];
+    }
+
+    public String getUserAgentKey(String format) {
+        return (format.equals("LOGSTASH")) ? NAMES[7] : jsonLoggingNameAliases.aliases[7];
+    }
+
+    public String getRequestProtocolKey(String format) {
+        return (format.equals("LOGSTASH")) ? NAMES[8] : jsonLoggingNameAliases.aliases[8];
+    }
+
+    public String getBytesReceivedKey(String format) {
+        return (format.equals("LOGSTASH")) ? NAMES[9] : jsonLoggingNameAliases.aliases[9];
+    }
+
+    public String getResponseCodeKey(String format) {
+        return (format.equals("LOGSTASH")) ? NAMES[10] : jsonLoggingNameAliases.aliases[10];
+    }
+
+    public String getElapsedTimeKey(String format) {
+        return (format.equals("LOGSTASH")) ? NAMES[11] : jsonLoggingNameAliases.aliases[11];
+    }
+
+    public String getDatetimeKey(String format) {
+        return (format.equals("LOGSTASH")) ? NAMES[12] : jsonLoggingNameAliases.aliases[12];
+    }
+
+    public String getSequenceKey(String format) {
+        return (format.equals("LOGSTASH")) ? NAMES[13] : jsonLoggingNameAliases.aliases[13];
+    }
+
+    public String getRemoteIPKey(String format) {
+        return (format.equals("LOGSTASH")) ? NAMES[14] : jsonLoggingNameAliases.aliases[18];
+    }
+
+    public String getBytesSentKey(String format) {
+        return (format.equals("LOGSTASH")) ? NAMES[15] : jsonLoggingNameAliases.aliases[19];
+    }
+
+    public String getCookieKey(String format, KeyValuePair kvp) {
+        return (format.equals("LOGSTASH")) ? (NAMES[16] + "_" + kvp.getKey()) : (jsonLoggingNameAliases.aliases[20] + "_" + kvp.getKey());
+    }
+
+    public String getRequestElapsedTimeKey(String format) {
+        return (format.equals("LOGSTASH")) ? NAMES[17] : jsonLoggingNameAliases.aliases[21];
+    }
+
+    public String getRequestHeaderKey(String format, KeyValuePair kvp) {
+        return (format.equals("LOGSTASH")) ? (NAMES[18] + "_" + kvp.getKey()) : (jsonLoggingNameAliases.aliases[22] + "_" + kvp.getKey());
+    }
+
+    public String getResponseHeaderKey(String format, KeyValuePair kvp) {
+        return (format.equals("LOGSTASH")) ? (NAMES[19] + "_" + kvp.getKey()) : (jsonLoggingNameAliases.aliases[23] + "_" + kvp.getKey());
+    }
+
+    public String getRequestFirstLineKey(String format) {
+        return (format.equals("LOGSTASH")) ? NAMES[20] : jsonLoggingNameAliases.aliases[24];
+    }
+
+    public String getAccessLogDatetimeKey(String format) {
+        return (format.equals("LOGSTASH")) ? NAMES[21] : jsonLoggingNameAliases.aliases[25];
+    }
+
+    public String getRemoteUserKey(String format) {
+        return (format.equals("LOGSTASH")) ? NAMES[22] : jsonLoggingNameAliases.aliases[26];
+    }
+
+    // Original, no parameter
     public String getRequestStartTimeKey() {
         return NAMES[0];
     }
@@ -527,7 +621,6 @@ public class AccessLogData extends GenericData {
         return NAMES[13];
     }
 
-    // LG 265
     public String getRemoteIPKey() {
         return NAMES[14];
     }
@@ -562,63 +655,6 @@ public class AccessLogData extends GenericData {
 
     public String getRemoteUserKey() {
         return NAMES[22];
-    }
-    // LG 265
-
-    public String getRequestStartTimeKey1_1() {
-        return NAMES1_1[0];
-    }
-
-    public String getUriPathKey1_1() {
-        return NAMES1_1[1];
-    }
-
-    public String getRequestMethodKey1_1() {
-        return NAMES1_1[2];
-    }
-
-    public String getQueryStringKey1_1() {
-        return NAMES1_1[3];
-    }
-
-    public String getRequestHostKey1_1() {
-        return NAMES1_1[4];
-    }
-
-    public String getRequestPortKey1_1() {
-        return NAMES1_1[5];
-    }
-
-    public String getRemoteHostKey1_1() {
-        return NAMES1_1[6];
-    }
-
-    public String getUserAgentKey1_1() {
-        return NAMES1_1[7];
-    }
-
-    public String getRequestProtocolKey1_1() {
-        return NAMES1_1[8];
-    }
-
-    public String getBytesReceivedKey1_1() {
-        return NAMES1_1[9];
-    }
-
-    public String getResponseCodeKey1_1() {
-        return NAMES1_1[10];
-    }
-
-    public String getElapsedTimeKey1_1() {
-        return NAMES1_1[11];
-    }
-
-    public String getDatetimeKey1_1() {
-        return NAMES1_1[12];
-    }
-
-    public String getSequenceKey1_1() {
-        return NAMES1_1[13];
     }
 
     //name aliases

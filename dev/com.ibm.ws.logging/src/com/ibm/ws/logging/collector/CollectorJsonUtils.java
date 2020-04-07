@@ -236,7 +236,7 @@ public class CollectorJsonUtils {
         //@formatter:on
 
         if (tags != null) {
-//            jsonBuilder.addField("ibm_tags", CollectorJsonHelpers.jsonifyTags(tags), false);
+            jsonBuilder.addField("ibm_tags", CollectorJsonHelpers.jsonifyTags(tags), false);
         }
 
         return jsonBuilder.build().toString();
