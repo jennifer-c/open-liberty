@@ -16,6 +16,7 @@ import com.ibm.websphere.ras.DataFormatHelper;
 import com.ibm.ws.logging.data.AccessLogData;
 import com.ibm.ws.logging.data.AccessLogDataFormatter;
 import com.ibm.ws.logging.data.FFDCData;
+import com.ibm.ws.logging.data.FormatSpecifier;
 import com.ibm.ws.logging.data.GCData;
 import com.ibm.ws.logging.data.GenericData;
 import com.ibm.ws.logging.data.JSONObject.JSONObjectBuilder;
@@ -217,26 +218,26 @@ public class CollectorJsonUtils {
                                         String serverName, String hostName, Object event, String[] tags) {
 
         AccessLogData accessLogData = (AccessLogData) event;
-        JSONObjectBuilder jsonBuilder = CollectorJsonHelpers.startAccessLogJsonFields(hostName, wlpUserDir, serverName);
+        JSONObjectBuilder jsonBuilder = CollectorJsonHelpers.startAccessLogJsonFields(hostName, wlpUserDir, serverName, FormatSpecifier.LOGSTASH);
 
         AccessLogDataFormatter[] formatters = accessLogData.getFormatters();
 
-        if (AccessLogData.isCustomAccessLogToJSONEnabledCollector.equals("logFormat")) {
+        if (formatters[3] != null) {
             formatters[3].populate(jsonBuilder, accessLogData);
         }
 
-        if (AccessLogData.isCustomAccessLogToJSONEnabledCollector.equals("default")) {
+        if (formatters[2] != null) {
             formatters[2].populate(jsonBuilder, accessLogData);
         }
 
         String datetime = CollectorJsonHelpers.dateFormatTL.get().format(accessLogData.getDatetime());
         //@formatter:off
-        jsonBuilder.addField(accessLogData.getDatetimeKey(), datetime, false, true)
-                   .addField(accessLogData.getSequenceKey(), accessLogData.getSequence(), false, true);
+        jsonBuilder.addField(AccessLogData.getDatetimeKey(FormatSpecifier.LOGSTASH), datetime, false, true)
+                   .addField(AccessLogData.getSequenceKey(FormatSpecifier.LOGSTASH), accessLogData.getSequence(), false, true);
         //@formatter:on
 
         if (tags != null) {
-            jsonBuilder.addField("ibm_tags", CollectorJsonHelpers.jsonifyTags(tags), false);
+            jsonBuilder.addPreformattedField("tags", CollectorJsonHelpers.jsonifyTags(tags));
         }
 
         return jsonBuilder.build().toString();

@@ -111,8 +111,8 @@ public class LogProviderConfigImpl implements LogProviderConfig {
     /** Boolean to check if omission of jsonFields is allowed (for beta) */
     protected volatile Boolean omitJsonFields = false;
 
-    /** Boolean to check if access log format fields should be followed */
-    protected volatile String jsonAccessLogFields = "";
+    /** Which access log format fields should be printed as JSON logs */
+    protected volatile String jsonAccessLogFields = LoggingConstants.DEFAULT_JSON_ACCESS_LOG_FIELDS;
 
     /** List of sources to route to console.log / console */
     protected volatile Collection<String> consoleSource = Arrays.asList(LoggingConstants.DEFAULT_CONSOLE_SOURCE);
@@ -534,27 +534,6 @@ public class LogProviderConfigImpl implements LogProviderConfig {
             String newValue = LoggingConfigUtils.getStringValue(value, defaultValue);
             if (isInit && value == null) {
                 config.put(propertyKey, newValue);
-            }
-            return newValue;
-        }
-
-        /**
-         * Gets the boolean value. During initializing, the property value is set
-         * to the default (or server env value if set) if the config property is not found.
-         * Note: During runtime server update if configKey is not set, it'll look up the property
-         * value i.e the ibm:variable (see the metatype.xml)
-         *
-         * @param config
-         * @param defaultValue
-         * @param isInit
-         * @return
-         */
-        // Can delete this probably - keeping it for now just in case
-        Boolean getBooleanValueAndSaveInit(Map<String, Object> config, boolean defaultValue, boolean isInit) {
-            Object value = config.get(isInit ? propertyKey : configKey);
-            Boolean newValue = LoggingConfigUtils.getBooleanValue(value, defaultValue);
-            if (isInit && value == null) {
-                config.put(propertyKey, newValue.toString());
             }
             return newValue;
         }

@@ -34,8 +34,8 @@ import com.ibm.ws.collector.ClientPool;
 import com.ibm.ws.collector.Collector;
 import com.ibm.ws.collector.Target;
 import com.ibm.ws.collector.TaskManager;
+import com.ibm.ws.http.logging.internal.ConfigurationSetterLogstash;
 import com.ibm.ws.logging.collector.CollectorJsonUtils;
-import com.ibm.ws.logging.data.AccessLogData;
 import com.ibm.ws.logstash.collector.LogstashRuntimeVersion;
 import com.ibm.ws.lumberjack.LumberjackEvent;
 import com.ibm.ws.lumberjack.LumberjackEvent.Entry;
@@ -88,6 +88,8 @@ public class LogstashCollector extends Collector {
     private String logstashVersion;
 
     private String jsonAccessLogFields;
+
+    public ConfigurationSetterLogstash configSetter;
 
     @Override
     @Reference(name = EXECUTOR_SERVICE, service = ExecutorService.class)
@@ -142,6 +144,9 @@ public class LogstashCollector extends Collector {
         variableRegistryServiceRef.activate(cc);
         setLogstashVersion();
         setJsonAccessLogFields(configuration);
+        if (configSetter != null) {
+            configSetter.setConfig(jsonAccessLogFields);
+        }
         //Get the server instance details
         setServerInfo(configuration);
         setConfigInfo(configuration);
@@ -171,6 +176,9 @@ public class LogstashCollector extends Collector {
         setConfigInfo(configuration);
         validateSources(configuration);
         setJsonAccessLogFields(configuration);
+        if (configSetter != null) {
+            configSetter.setConfig(jsonAccessLogFields);
+        }
         if (taskMgr != null) {
             taskMgr.updateConfig();
         }
@@ -199,7 +207,11 @@ public class LogstashCollector extends Collector {
 
     private void setJsonAccessLogFields(Map<String, Object> configuration) {
         jsonAccessLogFields = (String) configuration.get("jsonAccessLogFields");
-        AccessLogData.isCustomAccessLogToJSONEnabledCollector = jsonAccessLogFields;
+    }
+
+    @Reference
+    public void setConfigurationSetter(ConfigurationSetterLogstash configSetter) {
+        this.configSetter = configSetter;
     }
 
     private void setServerInfo(Map<String, Object> configuration) {

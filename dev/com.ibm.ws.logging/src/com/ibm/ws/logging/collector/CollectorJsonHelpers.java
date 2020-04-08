@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import com.ibm.ws.logging.data.AccessLogData;
 import com.ibm.ws.logging.data.AuditData;
 import com.ibm.ws.logging.data.FFDCData;
+import com.ibm.ws.logging.data.FormatSpecifier;
 import com.ibm.ws.logging.data.JSONObject;
 import com.ibm.ws.logging.data.JSONObject.JSONObjectBuilder;
 import com.ibm.ws.logging.data.KeyValuePair;
@@ -326,7 +327,7 @@ public class CollectorJsonHelpers {
         String tempStartFields = startAuditJsonFields;
 
         if (tempStartFields != null) {
-            jsonBuilder.addFields(tempStartFields);
+            jsonBuilder.addPreformatted(tempStartFields);
         } else {
             //@formatter:off
             jsonBuilder.addField(AuditData.getTypeKeyJSON(), CollectorConstants.AUDIT_LOG_EVENT_TYPE, false, false)
@@ -344,7 +345,7 @@ public class CollectorJsonHelpers {
         String tempStartFields = startMessageJsonFields;
 
         if (tempStartFields != null)
-            jsonBuilder.addFields(tempStartFields);
+            jsonBuilder.addPreformatted(tempStartFields);
         else {
             //@formatter:off
             jsonBuilder.addField(LogTraceData.getTypeKeyJSON(true), CollectorConstants.MESSAGES_LOG_EVENT_TYPE, false, false)
@@ -362,7 +363,7 @@ public class CollectorJsonHelpers {
         String tempStartFields = startTraceJsonFields;
 
         if (tempStartFields != null)
-            jsonBuilder.addFields(tempStartFields);
+            jsonBuilder.addPreformatted(tempStartFields);
         else {
             //@formatter:off
             jsonBuilder.addField(LogTraceData.getTypeKeyJSON(false), CollectorConstants.TRACE_LOG_EVENT_TYPE, false, false)
@@ -380,7 +381,7 @@ public class CollectorJsonHelpers {
         String tempStartFields = startFFDCJsonFields;
 
         if (tempStartFields != null)
-            jsonBuilder.addFields(tempStartFields);
+            jsonBuilder.addPreformatted(tempStartFields);
         else {
             //@formatter:off
             jsonBuilder.addField(FFDCData.getTypeKeyJSON(), CollectorConstants.FFDC_EVENT_TYPE, false, false)
@@ -393,18 +394,18 @@ public class CollectorJsonHelpers {
         return jsonBuilder;
     }
 
-    protected static JSONObjectBuilder startAccessLogJsonFields(String hostName, String wlpUserDir, String serverName) {
+    protected static JSONObjectBuilder startAccessLogJsonFields(String hostName, String wlpUserDir, String serverName, FormatSpecifier fs) {
         JSONObjectBuilder jsonBuilder = new JSONObject.JSONObjectBuilder();
         String tempStartFields = startAccessLogJsonFields;
 
         if (tempStartFields != null)
-            jsonBuilder.addFields(tempStartFields);
+            jsonBuilder.addPreformatted(tempStartFields);
         else {
             //@formatter:off
-            jsonBuilder.addField(AccessLogData.getTypeKeyJSON(), CollectorConstants.ACCESS_LOG_EVENT_TYPE, false, false)
-            .addField(AccessLogData.getHostKeyJSON(), hostName, false, false)
-            .addField(AccessLogData.getUserDirKeyJSON(), wlpUserDir, false, true)
-            .addField(AccessLogData.getServerNameKeyJSON(), serverName, false, false);
+            jsonBuilder.addField(AccessLogData.getTypeKey(fs), CollectorConstants.ACCESS_LOG_EVENT_TYPE, false, false)
+            .addField(AccessLogData.getHostKey(fs), hostName, false, false)
+            .addField(AccessLogData.getUserDirKey(fs), wlpUserDir, false, true)
+            .addField(AccessLogData.getServerNameKey(fs), serverName, false, false);
             //@formatter:on
             startAccessLogJsonFields = jsonBuilder.toString();
         }

@@ -49,6 +49,7 @@ import com.ibm.ws.logging.WsMessageRouter;
 import com.ibm.ws.logging.WsTraceRouter;
 import com.ibm.ws.logging.collector.CollectorConstants;
 import com.ibm.ws.logging.collector.CollectorJsonHelpers;
+import com.ibm.ws.logging.data.AccessLogConfig;
 import com.ibm.ws.logging.data.AccessLogData;
 import com.ibm.ws.logging.data.AuditData;
 import com.ibm.ws.logging.data.FFDCData;
@@ -185,8 +186,12 @@ public class BaseTraceService implements TrService {
     /** If true, format the date and time format for log entries in messages.log, trace.log, and FFDC files in ISO-8601 format. */
     protected volatile boolean isoDateFormat = false;
 
-    /** If true, format JSON logs to match the logFormat for access logging */
-    protected volatile String jsonAccessLogFields = "";
+    /** If logFormat, format JSON logs to match the logFormat for access logging */
+    protected static volatile String jsonAccessLogFields = "default";
+
+    public static String getJsonAccessLogFields() {
+        return jsonAccessLogFields;
+    }
 
     /** Writer sending messages to the messages.log file */
     protected volatile TraceWriter messagesLog = null;
@@ -336,10 +341,11 @@ public class BaseTraceService implements TrService {
         TraceComponent tc = Tr.register(LogTraceData.class, NLSConstants.GROUP, NLSConstants.LOGGING_NLS);
         jsonAccessLogFields = trConfig.getjsonAccessLogFields();
 
-        if (jsonAccessLogFields != AccessLogData.isCustomAccessLogToJSONEnabled) {
-            AccessLogData.isCustomAccessLogToJSONEnabled = jsonAccessLogFields;
+        if (jsonAccessLogFields != AccessLogConfig.jsonAccessLogFields) {
+            AccessLogConfig.jsonAccessLogFields = jsonAccessLogFields;
         }
 
+        applyJsonFields(trConfig.getjsonFields(), trConfig.getOmitJsonFields());
         initializeWriters(trConfig);
         if (hideMessageids.size() > 0) {
             String msgKey = isHpelEnabled ? "MESSAGES_CONFIGURED_HIDDEN_HPEL" : "MESSAGES_CONFIGURED_HIDDEN_2";
@@ -485,7 +491,6 @@ public class BaseTraceService implements TrService {
     }
 
     public static void applyJsonFields(String value, Boolean omitJsonFields) {
-
         if (value == null || value == "" || value.isEmpty()) { //reset all fields to original when server config has ""
             AccessLogData.resetJsonLoggingNameAliases();
             FFDCData.resetJsonLoggingNameAliases();
