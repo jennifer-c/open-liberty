@@ -111,8 +111,8 @@ public class LogProviderConfigImpl implements LogProviderConfig {
     /** Boolean to check if omission of jsonFields is allowed (for beta) */
     protected volatile Boolean omitJsonFields = false;
 
-    /** Boolean to check if access log format fields should be followed */
-    protected volatile String jsonAccessLogFields = "";
+    /** Which access log format fields should be printed as JSON logs */
+    protected volatile String jsonAccessLogFields = LoggingConstants.DEFAULT_JSON_ACCESS_LOG_FIELDS;
 
     /** List of sources to route to console.log / console */
     protected volatile Collection<String> consoleSource = Arrays.asList(LoggingConstants.DEFAULT_CONSOLE_SOURCE);

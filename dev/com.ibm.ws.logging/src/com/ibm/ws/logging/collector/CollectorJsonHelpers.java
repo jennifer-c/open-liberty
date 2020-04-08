@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import com.ibm.ws.logging.data.AccessLogData;
 import com.ibm.ws.logging.data.AuditData;
 import com.ibm.ws.logging.data.FFDCData;
+import com.ibm.ws.logging.data.FormatSpecifier;
 import com.ibm.ws.logging.data.JSONObject;
 import com.ibm.ws.logging.data.JSONObject.JSONObjectBuilder;
 import com.ibm.ws.logging.data.KeyValuePair;
@@ -393,7 +394,7 @@ public class CollectorJsonHelpers {
         return jsonBuilder;
     }
 
-    protected static JSONObjectBuilder startAccessLogJsonFields(String hostName, String wlpUserDir, String serverName) {
+    protected static JSONObjectBuilder startAccessLogJsonFields(String hostName, String wlpUserDir, String serverName, FormatSpecifier fs) {
         JSONObjectBuilder jsonBuilder = new JSONObject.JSONObjectBuilder();
         String tempStartFields = startAccessLogJsonFields;
 
@@ -401,10 +402,10 @@ public class CollectorJsonHelpers {
             jsonBuilder.addPreformatted(tempStartFields);
         else {
             //@formatter:off
-            jsonBuilder.addField(AccessLogData.getTypeKeyJSON(), CollectorConstants.ACCESS_LOG_EVENT_TYPE, false, false)
-            .addField(AccessLogData.getHostKeyJSON(), hostName, false, false)
-            .addField(AccessLogData.getUserDirKeyJSON(), wlpUserDir, false, true)
-            .addField(AccessLogData.getServerNameKeyJSON(), serverName, false, false);
+            jsonBuilder.addField(AccessLogData.getTypeKey(fs), CollectorConstants.ACCESS_LOG_EVENT_TYPE, false, false)
+            .addField(AccessLogData.getHostKey(fs), hostName, false, false)
+            .addField(AccessLogData.getUserDirKey(fs), wlpUserDir, false, true)
+            .addField(AccessLogData.getServerNameKey(fs), serverName, false, false);
             //@formatter:on
             startAccessLogJsonFields = jsonBuilder.toString();
         }

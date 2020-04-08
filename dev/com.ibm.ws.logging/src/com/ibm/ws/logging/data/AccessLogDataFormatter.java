@@ -19,8 +19,8 @@ import com.ibm.ws.logging.data.JSONObject.JSONObjectBuilder;
  */
 public class AccessLogDataFormatter {
     enum Format {
-        FORMATTER_DEFAULT_JSON,
-        FORMATTER_CUSTOM_JSON
+//        FORMATTER_DEFAULT_JSON,
+//        FORMATTER_CUSTOM_JSON,
         // FORMATTER_LOGSTASH_COLLECTOR_1.0_DEFAULT
         // FORMATTER_LOGSTASH_COLLECTOR_1.0_CUSTOM
     }
