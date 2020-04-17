@@ -510,6 +510,10 @@ public class BaseTraceService implements TrService {
         Map<String, String> ffdcMap = new HashMap<>();
         Map<String, String> accessLogMap = new HashMap<>();
         Map<String, String> auditMap = new HashMap<>();
+        // For access log data
+        Map<String, String> cookiesMap = new HashMap<>();
+        Map<String, String> requestHeaderMap = new HashMap<>();
+        Map<String, String> responseHeaderMap = new HashMap<>();
 
         List<String> LogTraceList = Arrays.asList(LogTraceData.NAMES1_1);
         List<String> FFDCList = Arrays.asList(FFDCData.NAMES1_1);
@@ -553,6 +557,21 @@ public class BaseTraceService implements TrService {
                     traceMap.put(entry[0], entry[1]);
                     valueFound = true;
                 }
+
+                // headers and cookies are special because there can be multiple instances
+                if (entry[0].contains("ibm_cookie_")) {
+                    cookiesMap.put(entry[0].substring(entry[0].lastIndexOf("_") + 1), entry[1]);
+                    valueFound = true;
+                }
+                if (entry[0].contains("ibm_requestHeader_")) {
+                    requestHeaderMap.put(entry[0].substring(entry[0].lastIndexOf("_") + 1), entry[1]);
+                    valueFound = true;
+                }
+                if (entry[0].contains("ibm_responseHeader_")) {
+                    responseHeaderMap.put(entry[0].substring(entry[0].lastIndexOf("_") + 1), entry[1]);
+                    valueFound = true;
+                }
+
                 if (!valueFound) {
                     //if the value does not exist in any of the known keys, give a warning
                     Tr.warning(tc, "JSON_FIELDS_NO_MATCH");
@@ -583,6 +602,19 @@ public class BaseTraceService implements TrService {
                         accessLogMap.put(entry[1], entry[2]);
                         valueFound = true;
                     }
+                    // headers and cookies are special because there can be multiple instances
+                    if (entry[1].contains("ibm_cookie_")) {
+                        cookiesMap.put(entry[1].substring(entry[1].lastIndexOf("_") + 1), entry[2]);
+                        valueFound = true;
+                    }
+                    if (entry[1].contains("ibm_requestHeader_")) {
+                        requestHeaderMap.put(entry[1].substring(entry[1].lastIndexOf("_") + 1), entry[2]);
+                        valueFound = true;
+                    }
+                    if (entry[1].contains("ibm_responseHeader_")) {
+                        responseHeaderMap.put(entry[1].substring(entry[1].lastIndexOf("_") + 1), entry[2]);
+                        valueFound = true;
+                    }
                 } else if (CollectorConstants.AUDIT_CONFIG_VAL.equals(entry[0])) {
                     if (AuditList.contains(entry[1])) {
                         auditMap.put(entry[1], entry[2]);
@@ -609,6 +641,9 @@ public class BaseTraceService implements TrService {
         LogTraceData.newJsonLoggingNameAliasesMessage(messageMap);
         LogTraceData.newJsonLoggingNameAliasesTrace(traceMap);
         AuditData.newJsonLoggingNameAliases(auditMap);
+
+        // Renaming/omitting cookie and header access log fields
+        AccessLogData.populateDataMaps(cookiesMap, requestHeaderMap, responseHeaderMap);
 
         CollectorJsonHelpers.updateFieldMappings();
     }
