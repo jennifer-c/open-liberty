@@ -14,13 +14,19 @@ package com.ibm.ws.logging.data;
  *
  */
 public enum FormatSpecifier {
-    JSON(0),
-    LOGSTASH(1);
+    JSON(0, "JSON"),
+    LOGSTASH(1, "LOGSTASH");
 
     private int value;
+    private String name;
 
-    private FormatSpecifier(int value) {
+    private FormatSpecifier(int value, String name) {
         this.value = value;
+        this.name = name;
+    }
+
+    public boolean equals(String s) {
+        return name.equals(s);
     }
 
     public int getValue() {
