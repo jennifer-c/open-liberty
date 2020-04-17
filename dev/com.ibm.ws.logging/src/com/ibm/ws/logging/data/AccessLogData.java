@@ -10,6 +10,7 @@
  *******************************************************************************/
 package com.ibm.ws.logging.data;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import com.ibm.ws.logging.collector.LogFieldConstants;
@@ -79,6 +80,11 @@ public class AccessLogData extends GenericData {
                                             LogFieldConstants.REMOTEUSERID
     };
 
+    // For renaming/omitting fields
+    private static Map<String, String> cookieMap = new HashMap<>();
+    private static Map<String, String> requestHeaderMap = new HashMap<>();
+    private static Map<String, String> responseHeaderMap = new HashMap<>();
+
     private static NameAliases jsonLoggingNameAliases = new NameAliases(NAMES1_1);
     private static NameAliases jsonLoggingNameAliasesLogstash = new NameAliases(NAMES);
 
@@ -88,6 +94,12 @@ public class AccessLogData extends GenericData {
     KeyValuePairList kvplCookies = new KeyValuePairList("cookies");
     KeyValuePairList kvplRequestHeaders = new KeyValuePairList("requestHeaders");
     KeyValuePairList kvplResponseHeaders = new KeyValuePairList("responseHeaders");
+
+    public static void populateDataMaps(Map<String, String> cookies, Map<String, String> requestHeaders, Map<String, String> responseHeaders) {
+        cookieMap = cookies;
+        requestHeaderMap = requestHeaders;
+        responseHeaderMap = responseHeaders;
+    }
 
     public void addFormatters(AccessLogDataFormatter[] formatters) {
         this.formatters = formatters;
@@ -419,6 +431,10 @@ public class AccessLogData extends GenericData {
     }
 
     public static String getCookieKey(FormatSpecifier format, KeyValuePair kvp) {
+        String cookieName = kvp.getKey();
+        if (cookieMap.containsKey(cookieName) && format.equals("JSON")) {
+            return cookieMap.get(cookieName);
+        }
         return nameAliases[format.getValue()].aliases[20] + "_" + kvp.getKey();
     }
 
@@ -427,10 +443,18 @@ public class AccessLogData extends GenericData {
     }
 
     public static String getRequestHeaderKey(FormatSpecifier format, KeyValuePair kvp) {
+        String requestHeader = kvp.getKey();
+        if (requestHeaderMap.containsKey(requestHeader) && format.equals("JSON")) {
+            return requestHeaderMap.get(requestHeader);
+        }
         return nameAliases[format.getValue()].aliases[22] + "_" + kvp.getKey();
     }
 
     public static String getResponseHeaderKey(FormatSpecifier format, KeyValuePair kvp) {
+        String responseHeader = kvp.getKey();
+        if (responseHeaderMap.containsKey(responseHeader) && format.equals("JSON")) {
+            return responseHeaderMap.get(responseHeader);
+        }
         return nameAliases[format.getValue()].aliases[23] + "_" + kvp.getKey();
     }
 
