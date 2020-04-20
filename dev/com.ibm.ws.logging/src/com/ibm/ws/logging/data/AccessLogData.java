@@ -65,7 +65,7 @@ public class AccessLogData extends GenericData {
                                             LogFieldConstants.ELAPSEDTIME,
                                             LogFieldConstants.DATETIME,
                                             LogFieldConstants.SEQUENCE,
-                                            LogFieldConstants.HOST,
+                                            LogFieldConstants.HOSTNAME,
                                             LogFieldConstants.WLPUSERDIR,
                                             LogFieldConstants.SERVERNAME,
                                             LogFieldConstants.TYPE,
@@ -115,6 +115,9 @@ public class AccessLogData extends GenericData {
 
     public static void resetJsonLoggingNameAliases() {
         jsonLoggingNameAliases.resetAliases();
+        cookieMap.clear();
+        requestHeaderMap.clear();
+        responseHeaderMap.clear();
     }
 
     public AccessLogData() {
