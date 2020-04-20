@@ -169,6 +169,10 @@ public class AccessLogSource implements Source {
         for (String s : defaultFields) {
             map.put(s, null);
         }
+        // User-Agent is a default field that is a specific request header
+        HashSet<Object> data = new HashSet<Object>();
+        data.add("User-Agent");
+        map.put("%i", data);
     }
 
     void initializeFieldMap(Map<String, HashSet<Object>> map, FormatSegment[] parsedFormat) {
@@ -341,14 +345,10 @@ public class AccessLogSource implements Source {
         public void process(AccessLogRecordData recordData, FormatSegment[] parsedFormat, String formatString) {
             jsonAccessLogFields = AccessLogConfig.jsonAccessLogFields;
             if (currentSF.checkConfigChange(formatString, jsonAccessLogFields, jsonAccessLogFieldsLogstash)) {
-                System.out.println("config change");
                 SetterFormatter newSF = new SetterFormatter();
                 List<AccessLogDataFieldSetter> fieldSetters = new ArrayList<AccessLogDataFieldSetter>();
                 AccessLogDataFormatter[] formatters = { null, null, null, null };
                 Map<String, HashSet<Object>> fieldsToAdd = new HashMap<String, HashSet<Object>>();
-
-                System.out.println(jsonAccessLogFieldsLogstash);
-                System.out.println(jsonAccessLogFields);
 
                 // Create the mapping of fields to add:{<format key> : <data value/null>}
                 // Prevents duplicates
