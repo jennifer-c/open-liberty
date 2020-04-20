@@ -10,7 +10,7 @@
  *******************************************************************************/
 package com.ibm.ws.logging.data;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 import com.ibm.ws.logging.collector.LogFieldConstants;
@@ -65,6 +65,10 @@ public class AccessLogData extends GenericData {
                                             LogFieldConstants.ELAPSEDTIME,
                                             LogFieldConstants.DATETIME,
                                             LogFieldConstants.SEQUENCE,
+                                            LogFieldConstants.HOSTNAME,
+                                            LogFieldConstants.WLPUSERDIR,
+                                            LogFieldConstants.SERVERNAME,
+                                            LogFieldConstants.TYPE,
                                             LogFieldConstants.REMOTEIP,
                                             LogFieldConstants.BYTESSENT,
                                             LogFieldConstants.COOKIE,
@@ -76,14 +80,33 @@ public class AccessLogData extends GenericData {
                                             LogFieldConstants.REMOTEUSERID
     };
 
+    // For renaming/omitting fields
+    private static Map<String, String> cookieMap = new HashMap<>();
+    private static Map<String, String> requestHeaderMap = new HashMap<>();
+    private static Map<String, String> responseHeaderMap = new HashMap<>();
+
     private static NameAliases jsonLoggingNameAliases = new NameAliases(NAMES1_1);
+    private static NameAliases jsonLoggingNameAliasesLogstash = new NameAliases(NAMES);
 
-    public static String isCustomAccessLogToJSONEnabled = "";
-    public static String isCustomAccessLogToJSONEnabledCollector = "";
-    public boolean[] formatSpecifiers = new boolean[NAMES1_1.length];
+    private static NameAliases[] nameAliases = { jsonLoggingNameAliases, jsonLoggingNameAliasesLogstash };
 
-    public boolean[] getFormatSpecifierList() {
-        return formatSpecifiers;
+    public AccessLogDataFormatter[] formatters = new AccessLogDataFormatter[4];
+    KeyValuePairList kvplCookies = new KeyValuePairList("cookies");
+    KeyValuePairList kvplRequestHeaders = new KeyValuePairList("requestHeaders");
+    KeyValuePairList kvplResponseHeaders = new KeyValuePairList("responseHeaders");
+
+    public static void populateDataMaps(Map<String, String> cookies, Map<String, String> requestHeaders, Map<String, String> responseHeaders) {
+        cookieMap = cookies;
+        requestHeaderMap = requestHeaders;
+        responseHeaderMap = responseHeaders;
+    }
+
+    public void addFormatters(AccessLogDataFormatter[] formatters) {
+        this.formatters = formatters;
+    }
+
+    public AccessLogDataFormatter[] getFormatters() {
+        return this.formatters;
     }
 
     public static void newJsonLoggingNameAliases(Map<String, String> newAliases) {
@@ -92,6 +115,9 @@ public class AccessLogData extends GenericData {
 
     public static void resetJsonLoggingNameAliases() {
         jsonLoggingNameAliases.resetAliases();
+        cookieMap.clear();
+        requestHeaderMap.clear();
+        responseHeaderMap.clear();
     }
 
     public AccessLogData() {
@@ -110,132 +136,48 @@ public class AccessLogData extends GenericData {
         setPair(index, NAMES1_1[index], l);
     }
 
-    public void setRequestStartTime(String s, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%t")) {
-            setRequestStartTime(s);
-            this.formatSpecifiers[0] = true;
-        }
-    }
-
     public void setRequestStartTime(String s) {
         setPair(0, s);
-    }
-
-    public void setUriPath(String s, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%U")) {
-            setUriPath(s);
-            this.formatSpecifiers[1] = true;
-        }
     }
 
     public void setUriPath(String s) {
         setPair(1, s);
     }
 
-    public void setRequestMethod(String s, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%m")) {
-            setRequestMethod(s);
-            this.formatSpecifiers[2] = true;
-        }
-    }
-
     public void setRequestMethod(String s) {
         setPair(2, s);
-    }
-
-    public void setQueryString(String s, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%q")) {
-            setQueryString(s);
-            this.formatSpecifiers[3] = true;
-        }
     }
 
     public void setQueryString(String s) {
         setPair(3, s);
     }
 
-    public void setRequestHost(String s, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%A")) {
-            setRequestHost(s);
-            this.formatSpecifiers[4] = true;
-        }
-    }
-
     public void setRequestHost(String s) {
         setPair(4, s);
-    }
-
-    public void setRequestPort(String s, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%p")) {
-            setRequestPort(s);
-            this.formatSpecifiers[5] = true;
-        }
     }
 
     public void setRequestPort(String s) {
         setPair(5, s);
     }
 
-    public void setRemoteHost(String s, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%h")) {
-            setRemoteHost(s);
-            this.formatSpecifiers[6] = true;
-        }
-    }
-
     public void setRemoteHost(String s) {
         setPair(6, s);
-    }
-
-    public void setUserAgent(String s, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%i")) {
-            setUserAgent(s);
-            this.formatSpecifiers[7] = true;
-        }
     }
 
     public void setUserAgent(String s) {
         setPair(7, s);
     }
 
-    public void setRequestProtocol(String s, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%H")) {
-            setRequestProtocol(s);
-            this.formatSpecifiers[8] = true;
-        }
-    }
-
     public void setRequestProtocol(String s) {
         setPair(8, s);
-    }
-
-    public void setBytesReceived(long l, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%B")) {
-            setBytesReceived(l);
-            this.formatSpecifiers[9] = true;
-        }
     }
 
     public void setBytesReceived(long l) {
         setPair(9, l);
     }
 
-    public void setResponseCode(int i, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%s")) {
-            setResponseCode(i);
-            this.formatSpecifiers[10] = true;
-        }
-    }
-
     public void setResponseCode(int i) {
         setPair(10, i);
-    }
-
-    public void setElapsedTime(long l, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%{R}W")) {
-            setElapsedTime(l);
-            this.formatSpecifiers[11] = true;
-        }
     }
 
     public void setElapsedTime(long l) {
@@ -252,88 +194,45 @@ public class AccessLogData extends GenericData {
         setPair(13, s);
     }
 
-    // LG-265
-    public void setRemoteIP(String s, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%a")) {
-            setRemoteIP(s);
-            this.formatSpecifiers[14] = true;
-        }
-    }
-
+    // New optional access log fields
     public void setRemoteIP(String s) {
         setPair(14, s);
-    }
-
-    public void setBytesSent(String s, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%b")) {
-            setBytesSent(s);
-            this.formatSpecifiers[15] = true;
-        }
     }
 
     public void setBytesSent(String s) {
         setPair(15, s);
     }
 
-    public void setCookies(KeyValuePairList kvps) {
-        setPair(16, kvps);
-        this.formatSpecifiers[16] = true;
-    }
-
-    public void setRequestElapsedTime(long l, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%D")) {
-            setRequestElapsedTime(l);
-            this.formatSpecifiers[17] = true;
-        }
+    public void setCookies(String name, String value) {
+        kvplCookies.addKeyValuePair(name, value);
+        setPair(16, kvplCookies);
     }
 
     public void setRequestElapsedTime(long l) {
         setPair(17, l);
     }
 
-    public void setRequestHeader(KeyValuePairList kvps) {
-        setPair(18, kvps);
-        this.formatSpecifiers[18] = true;
+    public void setRequestHeader(String name, String value) {
+        kvplRequestHeaders.addKeyValuePair(name, value);
+        setPair(18, kvplRequestHeaders);
     }
 
-    public void setResponseHeader(KeyValuePairList kvps) {
-        setPair(19, kvps);
-        this.formatSpecifiers[19] = true;
-    }
-
-    public void setRequestFirstLine(String s, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%r")) {
-            setRequestFirstLine(s);
-            this.formatSpecifiers[20] = true;
-        }
+    public void setResponseHeader(String name, String value) {
+        kvplResponseHeaders.addKeyValuePair(name, value);
+        setPair(19, kvplResponseHeaders);
     }
 
     public void setRequestFirstLine(String s) {
         setPair(20, s);
     }
 
-    public void setAccessLogDatetime(String s, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%{t}W")) {
-            setAccessLogDatetime(s);
-            this.formatSpecifiers[21] = true;
-        }
-    }
-
     public void setAccessLogDatetime(String s) {
         setPair(21, s);
-    }
-
-    public void setRemoteUser(String s, ArrayList<String> formatSpecifiers) {
-        if (formatSpecifiers.contains("%u")) {
-            setRemoteUser(s);
-            this.formatSpecifiers[22] = true;
-        }
     }
 
     public void setRemoteUser(String s) {
         setPair(22, s);
     }
-    // END LG-265
 
     public String getRequestStartTime() {
         return getStringValue(0);
@@ -456,265 +355,123 @@ public class AccessLogData extends GenericData {
         return (KeyValuePairList) getPairs()[index];
     }
 
-    public String getRequestStartTimeKey() {
-        return NAMES[0];
+    public static String getRequestStartTimeKey(FormatSpecifier format) {
+        return nameAliases[format.getValue()].aliases[0];
     }
 
-    public String getUriPathKey() {
-        return NAMES[1];
+    public static String getUriPathKey(FormatSpecifier format) {
+        return nameAliases[format.getValue()].aliases[1];
     }
 
-    public String getRequestMethodKey() {
-        return NAMES[2];
+    public static String getRequestMethodKey(FormatSpecifier format) {
+        return nameAliases[format.getValue()].aliases[2];
     }
 
-    public String getQueryStringKey() {
-        return NAMES[3];
+    public static String getQueryStringKey(FormatSpecifier format) {
+        return nameAliases[format.getValue()].aliases[3];
     }
 
-    public String getRequestHostKey() {
-        return NAMES[4];
+    public static String getRequestHostKey(FormatSpecifier format) {
+        return nameAliases[format.getValue()].aliases[4];
     }
 
-    public String getRequestPortKey() {
-        return NAMES[5];
+    public static String getRequestPortKey(FormatSpecifier format) {
+        return nameAliases[format.getValue()].aliases[5];
     }
 
-    public String getRemoteHostKey() {
-        return NAMES[6];
+    public static String getRemoteHostKey(FormatSpecifier format) {
+        return nameAliases[format.getValue()].aliases[6];
     }
 
-    public String getUserAgentKey() {
-        return NAMES[7];
+    public static String getUserAgentKey(FormatSpecifier format) {
+        return nameAliases[format.getValue()].aliases[7];
     }
 
-    public String getRequestProtocolKey() {
-        return NAMES[8];
+    public static String getRequestProtocolKey(FormatSpecifier format) {
+        return nameAliases[format.getValue()].aliases[8];
     }
 
-    public String getBytesReceivedKey() {
-        return NAMES[9];
+    public static String getBytesReceivedKey(FormatSpecifier format) {
+        return nameAliases[format.getValue()].aliases[9];
     }
 
-    public String getResponseCodeKey() {
-        return NAMES[10];
+    public static String getResponseCodeKey(FormatSpecifier format) {
+        return nameAliases[format.getValue()].aliases[10];
     }
 
-    public String getElapsedTimeKey() {
-        return NAMES[11];
+    public static String getElapsedTimeKey(FormatSpecifier format) {
+        return nameAliases[format.getValue()].aliases[11];
     }
 
-    public String getDatetimeKey() {
-        return NAMES[12];
+    public static String getDatetimeKey(FormatSpecifier format) {
+        return nameAliases[format.getValue()].aliases[12];
     }
 
-    public String getSequenceKey() {
-        return NAMES[13];
+    public static String getSequenceKey(FormatSpecifier format) {
+        return nameAliases[format.getValue()].aliases[13];
     }
 
-    // LG 265
-    public String getRemoteIPKey() {
-        return NAMES[14];
+    public static String getHostKey(FormatSpecifier format) {
+        return nameAliases[format.getValue()].aliases[14];
     }
 
-    public String getBytesSentKey() {
-        return NAMES[15];
+    public static String getUserDirKey(FormatSpecifier format) {
+        return nameAliases[format.getValue()].aliases[15];
     }
 
-    public String getCookieKey(KeyValuePair kvp) {
-        return NAMES[16] + "_" + kvp.getKey();
+    public static String getServerNameKey(FormatSpecifier format) {
+        return nameAliases[format.getValue()].aliases[16];
     }
 
-    public String getRequestElapsedTimeKey() {
-        return NAMES[17];
+    public static String getTypeKey(FormatSpecifier format) {
+        return nameAliases[format.getValue()].aliases[17];
     }
 
-    public String getRequestHeaderKey(KeyValuePair kvp) {
-        return NAMES[18] + "_" + kvp.getKey();
+    public static String getRemoteIPKey(FormatSpecifier format) {
+        return nameAliases[format.getValue()].aliases[18];
     }
 
-    public String getResponseHeaderKey(KeyValuePair kvp) {
-        return NAMES[19] + "_" + kvp.getKey();
+    public static String getBytesSentKey(FormatSpecifier format) {
+        return nameAliases[format.getValue()].aliases[19];
     }
 
-    public String getRequestFirstLineKey() {
-        return NAMES[20];
+    public static String getCookieKey(FormatSpecifier format, KeyValuePair kvp) {
+        String cookieName = kvp.getKey();
+        if (cookieMap.containsKey(cookieName) && format.equals("JSON")) {
+            return cookieMap.get(cookieName);
+        }
+        return nameAliases[format.getValue()].aliases[20] + "_" + kvp.getKey();
     }
 
-    public String getAccessLogDatetimeKey() {
-        return NAMES[21];
+    public static String getRequestElapsedTimeKey(FormatSpecifier format) {
+        return nameAliases[format.getValue()].aliases[21];
     }
 
-    public String getRemoteUserKey() {
-        return NAMES[22];
+    public static String getRequestHeaderKey(FormatSpecifier format, KeyValuePair kvp) {
+        String requestHeader = kvp.getKey();
+        if (requestHeaderMap.containsKey(requestHeader) && format.equals("JSON")) {
+            return requestHeaderMap.get(requestHeader);
+        }
+        return nameAliases[format.getValue()].aliases[22] + "_" + kvp.getKey();
     }
-    // LG 265
 
-    public String getRequestStartTimeKey1_1() {
-        return NAMES1_1[0];
+    public static String getResponseHeaderKey(FormatSpecifier format, KeyValuePair kvp) {
+        String responseHeader = kvp.getKey();
+        if (responseHeaderMap.containsKey(responseHeader) && format.equals("JSON")) {
+            return responseHeaderMap.get(responseHeader);
+        }
+        return nameAliases[format.getValue()].aliases[23] + "_" + kvp.getKey();
     }
 
-    public String getUriPathKey1_1() {
-        return NAMES1_1[1];
+    public static String getRequestFirstLineKey(FormatSpecifier format) {
+        return nameAliases[format.getValue()].aliases[24];
     }
 
-    public String getRequestMethodKey1_1() {
-        return NAMES1_1[2];
+    public static String getAccessLogDatetimeKey(FormatSpecifier format) {
+        return nameAliases[format.getValue()].aliases[25];
     }
 
-    public String getQueryStringKey1_1() {
-        return NAMES1_1[3];
+    public static String getRemoteUserKey(FormatSpecifier format) {
+        return nameAliases[format.getValue()].aliases[26];
     }
-
-    public String getRequestHostKey1_1() {
-        return NAMES1_1[4];
-    }
-
-    public String getRequestPortKey1_1() {
-        return NAMES1_1[5];
-    }
-
-    public String getRemoteHostKey1_1() {
-        return NAMES1_1[6];
-    }
-
-    public String getUserAgentKey1_1() {
-        return NAMES1_1[7];
-    }
-
-    public String getRequestProtocolKey1_1() {
-        return NAMES1_1[8];
-    }
-
-    public String getBytesReceivedKey1_1() {
-        return NAMES1_1[9];
-    }
-
-    public String getResponseCodeKey1_1() {
-        return NAMES1_1[10];
-    }
-
-    public String getElapsedTimeKey1_1() {
-        return NAMES1_1[11];
-    }
-
-    public String getDatetimeKey1_1() {
-        return NAMES1_1[12];
-    }
-
-    public String getSequenceKey1_1() {
-        return NAMES1_1[13];
-    }
-
-    //name aliases
-
-    public static String getRequestStartTimeKeyJSON() {
-        return jsonLoggingNameAliases.aliases[0];
-    }
-
-    public static String getUriPathKeyJSON() {
-        return jsonLoggingNameAliases.aliases[1];
-    }
-
-    public static String getRequestMethodKeyJSON() {
-        return jsonLoggingNameAliases.aliases[2];
-    }
-
-    public static String getQueryStringKeyJSON() {
-        return jsonLoggingNameAliases.aliases[3];
-    }
-
-    public static String getRequestHostKeyJSON() {
-        return jsonLoggingNameAliases.aliases[4];
-    }
-
-    public static String getRequestPortKeyJSON() {
-        return jsonLoggingNameAliases.aliases[5];
-    }
-
-    public static String getRemoteHostKeyJSON() {
-        return jsonLoggingNameAliases.aliases[6];
-    }
-
-    public static String getUserAgentKeyJSON() {
-        return jsonLoggingNameAliases.aliases[7];
-    }
-
-    public static String getRequestProtocolKeyJSON() {
-        return jsonLoggingNameAliases.aliases[8];
-    }
-
-    public static String getBytesReceivedKeyJSON() {
-        return jsonLoggingNameAliases.aliases[9];
-    }
-
-    public static String getResponseCodeKeyJSON() {
-        return jsonLoggingNameAliases.aliases[10];
-    }
-
-    public static String getElapsedTimeKeyJSON() {
-        return jsonLoggingNameAliases.aliases[11];
-    }
-
-    public static String getDatetimeKeyJSON() {
-        return jsonLoggingNameAliases.aliases[12];
-    }
-
-    public static String getSequenceKeyJSON() {
-        return jsonLoggingNameAliases.aliases[13];
-    }
-
-    public static String getHostKeyJSON() {
-        return jsonLoggingNameAliases.aliases[14];
-    }
-
-    public static String getUserDirKeyJSON() {
-        return jsonLoggingNameAliases.aliases[15];
-    }
-
-    public static String getServerNameKeyJSON() {
-        return jsonLoggingNameAliases.aliases[16];
-    }
-
-    public static String getTypeKeyJSON() {
-        return jsonLoggingNameAliases.aliases[17];
-    }
-
-    // LG-265
-    public static String getRemoteIPKeyJSON() {
-        return jsonLoggingNameAliases.aliases[18];
-    }
-
-    public static String getBytesSentKeyJSON() {
-        return jsonLoggingNameAliases.aliases[19];
-    }
-
-    public static String getCookieKeyJSON(KeyValuePair kvp) {
-        return jsonLoggingNameAliases.aliases[20] + "_" + kvp.getKey();
-    }
-
-    public static String getRequestElapsedTimeKeyJSON() {
-        return jsonLoggingNameAliases.aliases[21];
-    }
-
-    public static String getRequestHeaderKeyJSON(KeyValuePair kvp) {
-        return jsonLoggingNameAliases.aliases[22] + "_" + kvp.getKey();
-    }
-
-    public static String getResponseHeaderKeyJSON(KeyValuePair kvp) {
-        return jsonLoggingNameAliases.aliases[23] + "_" + kvp.getKey();
-    }
-
-    public static String getRequestFirstLineKeyJSON() {
-        return jsonLoggingNameAliases.aliases[24];
-    }
-
-    public static String getAccessLogDatetimeKeyJSON() {
-        return jsonLoggingNameAliases.aliases[25];
-    }
-
-    public static String getRemoteUserKeyJSON() {
-        return jsonLoggingNameAliases.aliases[26];
-    }
-    // END LG-265
 }

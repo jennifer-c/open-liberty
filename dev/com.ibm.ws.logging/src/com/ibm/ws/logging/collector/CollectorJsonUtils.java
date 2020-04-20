@@ -10,15 +10,16 @@
  *******************************************************************************/
 package com.ibm.ws.logging.collector;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 
 import com.ibm.websphere.ras.DataFormatHelper;
 import com.ibm.ws.logging.data.AccessLogData;
+import com.ibm.ws.logging.data.AccessLogDataFormatter;
 import com.ibm.ws.logging.data.FFDCData;
+import com.ibm.ws.logging.data.FormatSpecifier;
 import com.ibm.ws.logging.data.GCData;
 import com.ibm.ws.logging.data.GenericData;
+import com.ibm.ws.logging.data.JSONObject.JSONObjectBuilder;
 import com.ibm.ws.logging.data.KeyValuePair;
 import com.ibm.ws.logging.data.KeyValuePairList;
 import com.ibm.ws.logging.data.LogTraceData;
@@ -34,12 +35,6 @@ public class CollectorJsonUtils {
 
     public static String getEventType(String source, String location) {
         return CollectorJsonHelpers.getEventType(source, location);
-    }
-
-    public static String jsonifyEvent(Object event, String eventType, String serverName, String wlpUserDir, String serverHostName, String collectorVersion, String[] tags,
-                                      int maxFieldLength, String jsonAccessLogFields) {
-        AccessLogData.isCustomAccessLogToJSONEnabledCollector = jsonAccessLogFields;
-        return jsonifyEvent(event, eventType, serverName, wlpUserDir, serverHostName, collectorVersion, tags, maxFieldLength);
     }
 
     /**
@@ -223,182 +218,29 @@ public class CollectorJsonUtils {
                                         String serverName, String hostName, Object event, String[] tags) {
 
         AccessLogData accessLogData = (AccessLogData) event;
+        JSONObjectBuilder jsonBuilder = CollectorJsonHelpers.startAccessLogJsonFields(hostName, wlpUserDir, serverName, FormatSpecifier.LOGSTASH);
 
-        StringBuilder sb = CollectorJsonHelpers.startAccessLogJson(hostName, wlpUserDir, serverName);
-        boolean[] formatSpecifiers = accessLogData.getFormatSpecifierList();
+        AccessLogDataFormatter[] formatters = accessLogData.getFormatters();
 
-        if (AccessLogData.isCustomAccessLogToJSONEnabledCollector.equals("logFormat")) {
-            // %U
-            CollectorJsonHelpers.addToJSON(sb, accessLogData.getUriPathKey(), accessLogData.getUriPath(), false, true, false, false, false, formatSpecifiers[1]);
-
-            // %m
-            CollectorJsonHelpers.addToJSON(sb, accessLogData.getRequestMethodKey(), accessLogData.getRequestMethod(), false, true, false, false, false, formatSpecifiers[2]);
-            // %q
-
-            if (accessLogData.getQueryString() != null) {
-                String jsonQueryString = accessLogData.getQueryString();
-                if (jsonQueryString != null) {
-                    try {
-                        jsonQueryString = URLDecoder.decode(jsonQueryString, LogFieldConstants.UTF_8);
-                    } catch (UnsupportedEncodingException e) {
-                        // ignore, use the original value;
-                    }
-
-                }
-                CollectorJsonHelpers.addToJSON(sb, accessLogData.getQueryStringKey(), jsonQueryString, false, true, false, false, false, formatSpecifiers[3]);
-            }
-
-            // %A
-            CollectorJsonHelpers.addToJSON(sb, accessLogData.getRequestHostKey(), accessLogData.getRequestHost(), false, true, false, false, false, formatSpecifiers[4]);
-
-            // %p
-            CollectorJsonHelpers.addToJSON(sb, accessLogData.getRequestPortKey(), accessLogData.getRequestPort(), false, true, false, false, false, formatSpecifiers[5]);
-
-            // %h
-            CollectorJsonHelpers.addToJSON(sb, accessLogData.getRemoteHostKey(), accessLogData.getRemoteHost(), false, true, false, false, false, formatSpecifiers[6]);
-
-            String userAgent = accessLogData.getUserAgent();
-
-            if (userAgent != null && userAgent.length() > MAX_USER_AGENT_LENGTH) {
-                userAgent = userAgent.substring(0, MAX_USER_AGENT_LENGTH);
-            }
-            CollectorJsonHelpers.addToJSON(sb, accessLogData.getUserAgentKey(), userAgent, false, false, false, false, false, formatSpecifiers[7]);
-
-            // %H
-            CollectorJsonHelpers.addToJSON(sb, accessLogData.getRequestProtocolKey(), accessLogData.getRequestProtocol(), false, true, false, false, false,
-                                           formatSpecifiers[8]);
-
-            // %B
-            if (accessLogData.getBytesReceived() > -1)
-                CollectorJsonHelpers.addToJSON(sb, accessLogData.getBytesReceivedKey(), Long.toString(accessLogData.getBytesReceived()), false, true, false, false,
-                                               true, formatSpecifiers[9]);
-
-            // %s
-            if (accessLogData.getResponseCode() > -1)
-                CollectorJsonHelpers.addToJSON(sb, accessLogData.getResponseCodeKey(), Integer.toString(accessLogData.getResponseCode()), false, true, false, false,
-                                               true, formatSpecifiers[10]);
-
-            // %{R}W
-            if (accessLogData.getElapsedTime() > -1)
-                CollectorJsonHelpers.addToJSON(sb, accessLogData.getElapsedTimeKey(), Long.toString(accessLogData.getElapsedTime()), false, true, false, false, true,
-                                               formatSpecifiers[11]);
-
-            // %a
-            CollectorJsonHelpers.addToJSON(sb, accessLogData.getRemoteIPKey(), accessLogData.getRemoteIP(), false, true, false,
-                                           !(sb.length() > 1), false, formatSpecifiers[14]);
-
-            // %b
-            CollectorJsonHelpers.addToJSON(sb, accessLogData.getBytesSentKey(), accessLogData.getBytesSent(),
-                                           false, true, false, !(sb.length() > 1), false, formatSpecifiers[15]);
-
-            // %C
-            ArrayList<KeyValuePair> cookies = null;
-            KeyValuePairList kvplCookies = accessLogData.getCookies();
-            if (kvplCookies != null) {
-                cookies = kvplCookies.getList();
-                for (KeyValuePair k : cookies) {
-                    CollectorJsonHelpers.addToJSON(sb, accessLogData.getCookieKey(k), k.getStringValue(),
-                                                   true, true, false, !(sb.length() > 1), false, formatSpecifiers[16]);
-                }
-            }
-
-            // %D
-            if (accessLogData.getRequestElapsedTime() > 0)
-                CollectorJsonHelpers.addToJSON(sb, accessLogData.getRequestElapsedTimeKey(), Long.toString(accessLogData.getRequestElapsedTime()),
-                                               false, true, false, !(sb.length() > 1), true, formatSpecifiers[17]);
-
-            // %i
-            ArrayList<KeyValuePair> requestHeaders = null;
-            KeyValuePairList kvplRequestHeaders = accessLogData.getRequestHeaders();
-            if (kvplRequestHeaders != null) {
-                requestHeaders = kvplRequestHeaders.getList();
-                for (KeyValuePair k : requestHeaders) {
-                    CollectorJsonHelpers.addToJSON(sb, accessLogData.getRequestHeaderKey(k), k.getStringValue(),
-                                                   true, true, false, !(sb.length() > 1), false, formatSpecifiers[18]);
-                }
-            }
-
-            // %o
-            ArrayList<KeyValuePair> responseHeaders = null;
-            KeyValuePairList kvplResponseHeaders = accessLogData.getResponseHeaders();
-            if (kvplResponseHeaders != null) {
-                responseHeaders = kvplResponseHeaders.getList();
-                for (KeyValuePair k : responseHeaders) {
-                    CollectorJsonHelpers.addToJSON(sb, accessLogData.getResponseHeaderKey(k), k.getStringValue(),
-                                                   true, true, false, !(sb.length() > 1), false, formatSpecifiers[19]);
-                }
-            }
-
-            // %r
-            CollectorJsonHelpers.addToJSON(sb, accessLogData.getRequestFirstLineKey(), accessLogData.getRequestFirstLine(),
-                                           false, true, false, !(sb.length() > 1), false, formatSpecifiers[20]);
-
-            // %t
-            CollectorJsonHelpers.addToJSON(sb, accessLogData.getRequestStartTimeKey(), accessLogData.getRequestStartTime(),
-                                           false, true, false, !(sb.length() > 1), false, formatSpecifiers[0]);
-
-            // %{t}W
-            CollectorJsonHelpers.addToJSON(sb, accessLogData.getAccessLogDatetimeKey(), accessLogData.getAccessLogDatetime(),
-                                           false, true, false, !(sb.length() > 1), false, formatSpecifiers[21]);
-
-            // %u
-            if (accessLogData.getRemoteUser() != null && !accessLogData.getRemoteUser().equals(""))
-                CollectorJsonHelpers.addToJSON(sb, accessLogData.getRemoteUserKey(), accessLogData.getRemoteUser(), false, true,
-                                               false, !(sb.length() > 1), false, formatSpecifiers[22]);
-
-            // not part of logformat
-            String datetime = CollectorJsonHelpers.dateFormatTL.get().format(accessLogData.getDatetime());
-            CollectorJsonHelpers.addToJSON(sb, accessLogData.getDatetimeKey(), datetime, false, true, false, false, false);
-
-            // not part of logformat
-            CollectorJsonHelpers.addToJSON(sb, accessLogData.getSequenceKey(), accessLogData.getSequence(), false, true, false, false, false);
-        } else {
-            CollectorJsonHelpers.addToJSON(sb, accessLogData.getUriPathKey(), accessLogData.getUriPath(), false, true, false, false, false);
-            CollectorJsonHelpers.addToJSON(sb, accessLogData.getRequestMethodKey(), accessLogData.getRequestMethod(), false, true, false, false, false);
-
-            String jsonQueryString = accessLogData.getQueryString();
-            if (jsonQueryString != null) {
-                try {
-                    jsonQueryString = URLDecoder.decode(jsonQueryString, LogFieldConstants.UTF_8);
-                } catch (UnsupportedEncodingException e) {
-                    // ignore, use the original value;
-                }
-
-            }
-            CollectorJsonHelpers.addToJSON(sb, accessLogData.getQueryStringKey(), jsonQueryString, false, true, false, false, false);
-
-            CollectorJsonHelpers.addToJSON(sb, accessLogData.getRequestHostKey(), accessLogData.getRequestHost(), false, true, false, false, false);
-            CollectorJsonHelpers.addToJSON(sb, accessLogData.getRequestPortKey(), accessLogData.getRequestPort(), false, true, false, false, false);
-            CollectorJsonHelpers.addToJSON(sb, accessLogData.getRemoteHostKey(), accessLogData.getRemoteHost(), false, true, false, false, false);
-
-            String userAgent = accessLogData.getUserAgent();
-
-            if (userAgent != null && userAgent.length() > MAX_USER_AGENT_LENGTH) {
-                userAgent = userAgent.substring(0, MAX_USER_AGENT_LENGTH);
-            }
-
-            CollectorJsonHelpers.addToJSON(sb, accessLogData.getUserAgentKey(), userAgent, false, false, false, false, false);
-
-            CollectorJsonHelpers.addToJSON(sb, accessLogData.getRequestProtocolKey(), accessLogData.getRequestProtocol(), false, true, false, false, false);
-            CollectorJsonHelpers.addToJSON(sb, accessLogData.getBytesReceivedKey(), Long.toString(accessLogData.getBytesReceived()), false, true, false, false, true);
-            CollectorJsonHelpers.addToJSON(sb, accessLogData.getResponseCodeKey(), Integer.toString(accessLogData.getResponseCode()), false, true, false, false, true);
-            CollectorJsonHelpers.addToJSON(sb, accessLogData.getElapsedTimeKey(), Long.toString(accessLogData.getElapsedTime()), false, true, false, false, true);
-
-            String datetime = CollectorJsonHelpers.dateFormatTL.get().format(accessLogData.getDatetime());
-            CollectorJsonHelpers.addToJSON(sb, accessLogData.getDatetimeKey(), datetime, false, true, false, false, false);
-
-            CollectorJsonHelpers.addToJSON(sb, accessLogData.getSequenceKey(), accessLogData.getSequence(), false, true, false, false, false);
-
+        if (formatters[3] != null) {
+            formatters[3].populate(jsonBuilder, accessLogData);
         }
-        // END LG-265
+
+        if (formatters[2] != null) {
+            formatters[2].populate(jsonBuilder, accessLogData);
+        }
+
+        String datetime = CollectorJsonHelpers.dateFormatTL.get().format(accessLogData.getDatetime());
+        //@formatter:off
+        jsonBuilder.addField(AccessLogData.getDatetimeKey(FormatSpecifier.LOGSTASH), datetime, false, true)
+                   .addField(AccessLogData.getSequenceKey(FormatSpecifier.LOGSTASH), accessLogData.getSequence(), false, true);
+        //@formatter:on
 
         if (tags != null) {
-            addTagNameForVersion(sb).append(CollectorJsonHelpers.jsonifyTags(tags));
+            jsonBuilder.addPreformattedField("tags", CollectorJsonHelpers.jsonifyTags(tags));
         }
 
-        sb.append("}");
-
-        return sb.toString();
+        return jsonBuilder.build().toString();
     }
 
     public static String jsonifyAudit(String wlpUserDir, String serverName, String hostName, Object event, String[] tags) {

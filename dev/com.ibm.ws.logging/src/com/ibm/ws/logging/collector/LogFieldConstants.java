@@ -76,7 +76,7 @@ public class LogFieldConstants {
     public static final String RESPONSECODE = "responseCode";
     public static final String IBM_ELAPSEDTIME = "ibm_elapsedTime";
     public static final String ELAPSEDTIME = "elapsedTime";
-    // LG-265 new fields
+    // Non-default access log fields
     public static final String IBM_REMOTEIP = "ibm_remoteIP";
     public static final String REMOTEIP = "remoteIP";
     public static final String IBM_BYTESSENT = "ibm_bytesSent";

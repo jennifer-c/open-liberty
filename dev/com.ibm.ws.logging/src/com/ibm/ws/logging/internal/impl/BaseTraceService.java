@@ -49,6 +49,7 @@ import com.ibm.ws.logging.WsMessageRouter;
 import com.ibm.ws.logging.WsTraceRouter;
 import com.ibm.ws.logging.collector.CollectorConstants;
 import com.ibm.ws.logging.collector.CollectorJsonHelpers;
+import com.ibm.ws.logging.data.AccessLogConfig;
 import com.ibm.ws.logging.data.AccessLogData;
 import com.ibm.ws.logging.data.AuditData;
 import com.ibm.ws.logging.data.FFDCData;
@@ -185,8 +186,8 @@ public class BaseTraceService implements TrService {
     /** If true, format the date and time format for log entries in messages.log, trace.log, and FFDC files in ISO-8601 format. */
     protected volatile boolean isoDateFormat = false;
 
-    /** If true, format JSON logs to match the logFormat for access logging */
-    protected volatile String jsonAccessLogFields = "";
+    /** If logFormat, format JSON logs to match the logFormat for access logging */
+    protected volatile String jsonAccessLogFields = "default";
 
     /** Writer sending messages to the messages.log file */
     protected volatile TraceWriter messagesLog = null;
@@ -285,12 +286,10 @@ public class BaseTraceService implements TrService {
             }
 
             @Override
-            public void flush() {
-            }
+            public void flush() {}
 
             @Override
-            public void close() {
-            }
+            public void close() {}
         });
     }
 
@@ -332,20 +331,14 @@ public class BaseTraceService implements TrService {
             BaseTraceFormatter.useIsoDateFormat = isoDateFormat;
         }
 
-        applyJsonFields(trConfig.getjsonFields(), trConfig.getOmitJsonFields());
-        // lg265
         TraceComponent tc = Tr.register(LogTraceData.class, NLSConstants.GROUP, NLSConstants.LOGGING_NLS);
         jsonAccessLogFields = trConfig.getjsonAccessLogFields();
-        // Empty string means the user didn't specify the option
-        if (!(jsonAccessLogFields.equals("logFormat") || jsonAccessLogFields.equals("default") || jsonAccessLogFields.equals(""))) {
-            Tr.warning(tc, "JSON_ACCESS_LOG_FIELD_INVALID_VALUE", jsonAccessLogFields);
-        }
-        if (jsonAccessLogFields != AccessLogData.isCustomAccessLogToJSONEnabled) {
-            AccessLogData.isCustomAccessLogToJSONEnabled = jsonAccessLogFields;
+
+        if (jsonAccessLogFields != AccessLogConfig.jsonAccessLogFields) {
+            AccessLogConfig.jsonAccessLogFields = jsonAccessLogFields;
         }
 
-        // end lg 265
-
+        applyJsonFields(trConfig.getjsonFields(), trConfig.getOmitJsonFields());
         initializeWriters(trConfig);
         if (hideMessageids.size() > 0) {
             String msgKey = isHpelEnabled ? "MESSAGES_CONFIGURED_HIDDEN_HPEL" : "MESSAGES_CONFIGURED_HIDDEN_2";
@@ -491,7 +484,6 @@ public class BaseTraceService implements TrService {
     }
 
     public static void applyJsonFields(String value, Boolean omitJsonFields) {
-
         if (value == null || value == "" || value.isEmpty()) { //reset all fields to original when server config has ""
             AccessLogData.resetJsonLoggingNameAliases();
             FFDCData.resetJsonLoggingNameAliases();
@@ -511,6 +503,10 @@ public class BaseTraceService implements TrService {
         Map<String, String> ffdcMap = new HashMap<>();
         Map<String, String> accessLogMap = new HashMap<>();
         Map<String, String> auditMap = new HashMap<>();
+        // For access log data
+        Map<String, String> cookiesMap = new HashMap<>();
+        Map<String, String> requestHeaderMap = new HashMap<>();
+        Map<String, String> responseHeaderMap = new HashMap<>();
 
         List<String> LogTraceList = Arrays.asList(LogTraceData.NAMES1_1);
         List<String> FFDCList = Arrays.asList(FFDCData.NAMES1_1);
@@ -554,6 +550,19 @@ public class BaseTraceService implements TrService {
                     traceMap.put(entry[0], entry[1]);
                     valueFound = true;
                 }
+
+                // headers and cookies are special because there can be multiple instances
+                if (entry[0].contains("ibm_cookie_")) {
+                    cookiesMap.put(entry[0].substring(entry[0].lastIndexOf("_") + 1), entry[1]);
+                    valueFound = true;
+                } else if (entry[0].contains("ibm_requestHeader_")) {
+                    requestHeaderMap.put(entry[0].substring(entry[0].lastIndexOf("_") + 1), entry[1]);
+                    valueFound = true;
+                } else if (entry[0].contains("ibm_responseHeader_")) {
+                    responseHeaderMap.put(entry[0].substring(entry[0].lastIndexOf("_") + 1), entry[1]);
+                    valueFound = true;
+                }
+
                 if (!valueFound) {
                     //if the value does not exist in any of the known keys, give a warning
                     Tr.warning(tc, "JSON_FIELDS_NO_MATCH");
@@ -584,6 +593,17 @@ public class BaseTraceService implements TrService {
                         accessLogMap.put(entry[1], entry[2]);
                         valueFound = true;
                     }
+                    // headers and cookies are special because there can be multiple instances
+                    if (entry[1].contains("ibm_cookie_")) {
+                        cookiesMap.put(entry[1].substring(entry[1].lastIndexOf("_") + 1), entry[2]);
+                        valueFound = true;
+                    } else if (entry[1].contains("ibm_requestHeader_")) {
+                        requestHeaderMap.put(entry[1].substring(entry[1].lastIndexOf("_") + 1), entry[2]);
+                        valueFound = true;
+                    } else if (entry[1].contains("ibm_responseHeader_")) {
+                        responseHeaderMap.put(entry[1].substring(entry[1].lastIndexOf("_") + 1), entry[2]);
+                        valueFound = true;
+                    }
                 } else if (CollectorConstants.AUDIT_CONFIG_VAL.equals(entry[0])) {
                     if (AuditList.contains(entry[1])) {
                         auditMap.put(entry[1], entry[2]);
@@ -610,6 +630,9 @@ public class BaseTraceService implements TrService {
         LogTraceData.newJsonLoggingNameAliasesMessage(messageMap);
         LogTraceData.newJsonLoggingNameAliasesTrace(traceMap);
         AuditData.newJsonLoggingNameAliases(auditMap);
+
+        // Renaming/omitting cookie and header access log fields
+        AccessLogData.populateDataMaps(cookiesMap, requestHeaderMap, responseHeaderMap);
 
         CollectorJsonHelpers.updateFieldMappings();
     }
@@ -1279,50 +1302,6 @@ public class BaseTraceService implements TrService {
         return serverHostName;
     }
 
-    /**
-     * Escape \b, \f, \n, \r, \t, ", \, / characters and appends to a string builder
-     *
-     * @param sb String builder to append to
-     * @param s  String to escape
-     */
-    private void jsonEscape(StringBuilder sb, String s) {
-        if (s == null) {
-            sb.append(s);
-            return;
-        }
-        for (int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-            switch (c) {
-                case '\b':
-                    sb.append("\\b");
-                    break;
-                case '\f':
-                    sb.append("\\f");
-                    break;
-                case '\n':
-                    sb.append("\\n");
-                    break;
-                case '\r':
-                    sb.append("\\r");
-                    break;
-                case '\t':
-                    sb.append("\\t");
-                    break;
-
-                // Fall through because we just need to add \ (escaped) before the character
-                case '\\':
-                case '\"':
-                case '/':
-                    sb.append("\\");
-                    sb.append(c);
-                    break;
-                default:
-                    sb.append(c);
-            }
-        }
-    }
-
->>>>>>> Working basic impl
     public final static class SystemLogHolder extends Level implements TraceWriter {
         private static final long serialVersionUID = 1L;
         transient final PrintStream originalStream;
@@ -1347,8 +1326,7 @@ public class BaseTraceService implements TrService {
 
         /** {@inheritDoc} */
         @Override
-        public void close() throws IOException {
-        }
+        public void close() throws IOException {}
 
         /**
          * Only allow "off" as a valid value for toggling system.out

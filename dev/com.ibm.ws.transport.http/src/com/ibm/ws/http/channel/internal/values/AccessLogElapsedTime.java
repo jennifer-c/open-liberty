@@ -24,8 +24,7 @@ public class AccessLogElapsedTime extends AccessLogData {
         // Millisecond accuracy, microsecond precision
     }
 
-    // Need some way to "remember" the elapsedTime value, aka the System.nanoTime - startTime
-    // Does it need to be static?
+    // Need some way to "remember" the elapsedTime value; the System.nanoTime - startTime
     static long currentTime = 0;
 
     @Override

@@ -37,7 +37,6 @@ public class AccessLogCurrentTime extends AccessLogData {
     @Override
     public boolean set(StringBuilder accessLogEntry,
                        HttpResponseMessage response, HttpRequestMessage request, Object data) {
-        // Should we just use "getAccessLogCurrentTimeAsString"? Will performance be impacted?
         if (data == null) {
             accessLogEntry.append("[");
             accessLogEntry.append(HttpDispatcher.getDateFormatter().getNCSATime(new Date(System.currentTimeMillis())));

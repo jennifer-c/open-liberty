@@ -143,13 +143,13 @@ public class CustomAccessLogFieldsTest {
 
     @Test
     public void testRenameAccessLogField() throws Exception {
-        // rename header, cookie <-- doesnt work yet
+        // rename header, cookie
         // rename broadly
     }
 
     @Test
     public void testOmitAccessLogField() throws Exception {
-        // omit specific header, cookie <-- doesnt work yet
+        // omit specific header, cookie
         // omit broadly
     }
 
@@ -166,7 +166,6 @@ public class CustomAccessLogFieldsTest {
 
     @Test
     public void testOnlyUnchangingField() throws Exception {
-        // come up with better test name
         // test that specifying `= logFormat` doesn't print out the original set of fields unless specified
         // %h %H %A %B %m %p %q %R{W} %s %U <- should not be printed out
     }
