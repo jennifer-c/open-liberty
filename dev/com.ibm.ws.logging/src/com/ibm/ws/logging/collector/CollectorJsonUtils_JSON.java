@@ -106,7 +106,7 @@ public class CollectorJsonUtils_JSON {
     public static String jsonifyAccess(String wlpUserDir, String serverName, String hostName, Object event, String[] tags) {
 
         AccessLogData accessLogData = (AccessLogData) event;
-        JSONObjectBuilder jsonBuilder = CollectorJsonHelpers.startAccessLogJsonFields(hostName, wlpUserDir, serverName, FormatSpecifier.LOGSTASH);
+        JSONObjectBuilder jsonBuilder = CollectorJsonHelpers.startAccessLogJsonFields(hostName, wlpUserDir, serverName, FormatSpecifier.JSON);
 
         AccessLogDataFormatter[] formatters = accessLogData.getFormatters();
 

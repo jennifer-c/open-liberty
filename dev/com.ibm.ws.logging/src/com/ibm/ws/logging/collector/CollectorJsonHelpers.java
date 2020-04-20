@@ -398,9 +398,9 @@ public class CollectorJsonHelpers {
         JSONObjectBuilder jsonBuilder = new JSONObject.JSONObjectBuilder();
         String tempStartFields = startAccessLogJsonFields;
 
-        if (tempStartFields != null)
+        if (tempStartFields != null && fs.equals("JSON")) {
             jsonBuilder.addPreformatted(tempStartFields);
-        else {
+        } else {
             //@formatter:off
             jsonBuilder.addField(AccessLogData.getTypeKey(fs), CollectorConstants.ACCESS_LOG_EVENT_TYPE, false, false)
             .addField(AccessLogData.getHostKey(fs), hostName, false, false)
