@@ -398,7 +398,7 @@ public class CollectorJsonHelpers {
         JSONObjectBuilder jsonBuilder = new JSONObject.JSONObjectBuilder();
         String tempStartFields = startAccessLogJsonFields;
 
-        if (tempStartFields != null && fs.equals("JSON")) {
+        if (tempStartFields != null) {
             jsonBuilder.addPreformatted(tempStartFields);
         } else {
             //@formatter:off
@@ -409,6 +409,19 @@ public class CollectorJsonHelpers {
             //@formatter:on
             startAccessLogJsonFields = jsonBuilder.toString();
         }
+        return jsonBuilder;
+    }
+
+    protected static JSONObjectBuilder startAccessLogJsonFieldsLogstash(String hostName, String wlpUserDir, String serverName, FormatSpecifier fs) {
+        JSONObjectBuilder jsonBuilder = new JSONObject.JSONObjectBuilder();
+
+        //@formatter:off
+        jsonBuilder.addField(AccessLogData.getTypeKey(fs), CollectorConstants.ACCESS_LOG_EVENT_TYPE, false, false)
+        .addField(AccessLogData.getHostKey(fs), hostName, false, false)
+        .addField(AccessLogData.getUserDirKey(fs), wlpUserDir, false, true)
+        .addField(AccessLogData.getServerNameKey(fs), serverName, false, false);
+        //@formatter:on
+
         return jsonBuilder;
     }
 

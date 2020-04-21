@@ -218,7 +218,7 @@ public class CollectorJsonUtils {
                                         String serverName, String hostName, Object event, String[] tags) {
 
         AccessLogData accessLogData = (AccessLogData) event;
-        JSONObjectBuilder jsonBuilder = CollectorJsonHelpers.startAccessLogJsonFields(hostName, wlpUserDir, serverName, FormatSpecifier.LOGSTASH);
+        JSONObjectBuilder jsonBuilder = CollectorJsonHelpers.startAccessLogJsonFieldsLogstash(hostName, wlpUserDir, serverName, FormatSpecifier.LOGSTASH);
 
         AccessLogDataFormatter[] formatters = accessLogData.getFormatters();
 
