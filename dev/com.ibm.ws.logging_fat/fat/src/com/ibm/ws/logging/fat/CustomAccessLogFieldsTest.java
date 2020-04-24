@@ -19,6 +19,8 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
 
 import org.junit.After;
@@ -56,9 +58,11 @@ public class CustomAccessLogFieldsTest {
     private static final String SERVER_NAME_XML = "CustomAccessLogFieldsXml";
     private static final String SERVER_NAME_BAD_CONFIG = "CustomAccessLogFieldsBadConfig";
 
-    // variable naming convention?
     private final String[] newFields = { "ibm_remoteIP", "ibm_bytesSent", "ibm_cookie", "ibm_requestElapsedTime", "ibm_requestHeader",
                                          "ibm_responseHeader", "ibm_requestFirstLine", "ibm_requestStartTime", "ibm_accessLogDatetime", "ibm_remoteUserID" };
+
+    private final String[] originalFields = { "ibm_remoteHost", "ibm_requestProtocol", "ibm_requestHost", "ibm_bytesReceived", "ibm_requestMethod", "ibm_requestPort",
+                                              "ibm_queryString", "ibm_elapsedTime", "ibm_responseCode", "ibm_uriPath" };
 
     private static LibertyServer serverInUse; // hold on to the server currently used so cleanUp knows which server to stop
 
@@ -99,9 +103,8 @@ public class CustomAccessLogFieldsTest {
     @Test
     public void testAccessLogFieldNamesEnv() throws Exception {
         setUp(envServer);
-        hitWebPage("", "", envServer);
+        hitWebPageSecure("", "", envServer);
         List<String> lines = envServer.findStringsInFileInLibertyServerRoot("liberty_accesslog", MESSAGE_LOG);
-        System.out.println(lines.get(0));
 
         assertTrue("There are fields missing in the output JSON log.", areAllFieldsPresent(lines));
     }
@@ -196,6 +199,23 @@ public class CustomAccessLogFieldsTest {
         } catch (IOException e) {
 
         }
+    }
 
+    protected static void hitWebPageSecure(String contextRoot, String servletName, LibertyServer server) throws MalformedURLException, IOException, ProtocolException {
+        try {
+            URL url = new URL("https://" + server.getHostname() + ":" + server.getHttpDefaultSecurePort() + "/" + contextRoot + "" + servletName);
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            String encoded = Base64.getEncoder().encodeToString(("admin:adminpwd").getBytes(StandardCharsets.UTF_8)); //Java 8
+            con.setRequestProperty("Authorization", "Basic " + encoded);
+            con.setRequestProperty("cookie", "cookie=cookie");
+            con.setRequestProperty("header", "headervalue");
+            BufferedReader br = HttpUtils.getConnectionStream(con);
+            String line = br.readLine();
+            // Make sure the server gave us something back
+            assertNotNull(line);
+            con.disconnect();
+        } catch (IOException e) {
+
+        }
     }
 }

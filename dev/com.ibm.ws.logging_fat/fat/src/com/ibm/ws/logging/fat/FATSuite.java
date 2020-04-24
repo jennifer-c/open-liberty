@@ -20,22 +20,22 @@ import org.junit.runners.Suite.SuiteClasses;
 @RunWith(Suite.class)
 
 @SuiteClasses({
-                StackTraceFilteringForLoggedExceptionParametersTest.class, StackTraceFilteringForLoggedExceptionWithACauseParametersTest.class,
-                StackTraceFilteringForPrintedExceptionTest.class, StackTraceFilteringForPrintedExceptionWithIBMCodeAtTopTest.class,
-                StackTraceFilteringForNoClassDefFoundErrorTest.class, StackTraceFilteringForBadlyWrittenThrowableTest.class,
-                StackTraceFilteringForIBMFeatureExceptionTest.class, StackTraceFilteringForUserFeatureExceptionTest.class,
-                StackTraceFilteringForSpecificationClassesExceptionTest.class,
-                InvalidTraceSpecificationTest.class,
-                HealthCenterTest.class,
-                TestHideMessages.class,
-                TestHideMsgDefinedBootstrap.class,
-                IsoDateFormatTest.class,
-                HandlerTest.class,
-                HeaderFormatTest.class,
-                LogServiceTest.class,
-                RealFlushTest.class,
-                JSONFieldsTest.class,
-                ConsoleFormatTest.class,
+//                StackTraceFilteringForLoggedExceptionParametersTest.class, StackTraceFilteringForLoggedExceptionWithACauseParametersTest.class,
+//                StackTraceFilteringForPrintedExceptionTest.class, StackTraceFilteringForPrintedExceptionWithIBMCodeAtTopTest.class,
+//                StackTraceFilteringForNoClassDefFoundErrorTest.class, StackTraceFilteringForBadlyWrittenThrowableTest.class,
+//                StackTraceFilteringForIBMFeatureExceptionTest.class, StackTraceFilteringForUserFeatureExceptionTest.class,
+//                StackTraceFilteringForSpecificationClassesExceptionTest.class,
+//                InvalidTraceSpecificationTest.class,
+//                HealthCenterTest.class,
+//                TestHideMessages.class,
+//                TestHideMsgDefinedBootstrap.class,
+//                IsoDateFormatTest.class,
+//                HandlerTest.class,
+//                HeaderFormatTest.class,
+//                LogServiceTest.class,
+//                RealFlushTest.class,
+//                JSONFieldsTest.class,
+//                ConsoleFormatTest.class,
                 CustomAccessLogFieldsTest.class
 })
 
