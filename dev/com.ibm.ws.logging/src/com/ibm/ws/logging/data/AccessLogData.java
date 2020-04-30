@@ -80,6 +80,9 @@ public class AccessLogData extends GenericData {
                                             LogFieldConstants.REMOTEUSERID
     };
 
+    public static final short KEYS_JSON = 0;
+    public static final short KEYS_LOGSTASH = 1;
+
     // For renaming/omitting fields
     private static Map<String, String> cookieMap = new HashMap<>();
     private static Map<String, String> requestHeaderMap = new HashMap<>();
@@ -90,6 +93,8 @@ public class AccessLogData extends GenericData {
 
     private static NameAliases[] nameAliases = { jsonLoggingNameAliases, jsonLoggingNameAliasesLogstash };
 
+    // Each formatter represents one type of access log format, and is null if not applicable
+    // { <default JSON logging>, <logFormat JSON logging>, <default logstashCollector>, <logFormat logstashCollector> }
     public AccessLogDataFormatter[] formatters = new AccessLogDataFormatter[4];
     KeyValuePairList kvplCookies = new KeyValuePairList("cookies");
     KeyValuePairList kvplRequestHeaders = new KeyValuePairList("requestHeaders");
@@ -115,9 +120,9 @@ public class AccessLogData extends GenericData {
 
     public static void resetJsonLoggingNameAliases() {
         jsonLoggingNameAliases.resetAliases();
-        cookieMap.clear();
-        requestHeaderMap.clear();
-        responseHeaderMap.clear();
+        cookieMap = new HashMap<>();
+        requestHeaderMap = new HashMap<>();
+        responseHeaderMap = new HashMap<>();
     }
 
     public AccessLogData() {
@@ -136,341 +141,117 @@ public class AccessLogData extends GenericData {
         setPair(index, NAMES1_1[index], l);
     }
 
-    public void setRequestStartTime(String s) {
-        setPair(0, s);
+    private KeyValuePairList getValues(int index) {
+        return (KeyValuePairList) getPairs()[index];
     }
 
-    public void setUriPath(String s) {
-        setPair(1, s);
-    }
-
-    public void setRequestMethod(String s) {
-        setPair(2, s);
-    }
-
-    public void setQueryString(String s) {
-        setPair(3, s);
-    }
-
-    public void setRequestHost(String s) {
-        setPair(4, s);
-    }
-
-    public void setRequestPort(String s) {
-        setPair(5, s);
-    }
-
-    public void setRemoteHost(String s) {
-        setPair(6, s);
-    }
-
-    public void setUserAgent(String s) {
-        setPair(7, s);
-    }
-
-    public void setRequestProtocol(String s) {
-        setPair(8, s);
-    }
-
-    public void setBytesReceived(long l) {
-        setPair(9, l);
-    }
-
-    public void setResponseCode(int i) {
-        setPair(10, i);
-    }
-
-    public void setElapsedTime(long l) {
-        setPair(11, l);
-    }
-
-    public void setDatetime(long l) {
-        setPair(12, l);
-    }
-
-    public void setSequence(String s) {
-        setPair(13, s);
-    }
-
+    // @formatter:off
+    public void setRequestStartTime(String s)  { setPair(0, s); }
+    public void setUriPath(String s)           { setPair(1, s); }
+    public void setRequestMethod(String s)     { setPair(2, s); }
+    public void setQueryString(String s)       { setPair(3, s); }
+    public void setRequestHost(String s)       { setPair(4, s); }
+    public void setRequestPort(String s)       { setPair(5, s); }
+    public void setRemoteHost(String s)        { setPair(6, s); }
+    public void setUserAgent(String s)         { setPair(7, s); }
+    public void setRequestProtocol(String s)   { setPair(8, s); }
+    public void setBytesReceived(long l)       { setPair(9, l); }
+    public void setResponseCode(int i)         { setPair(10, i); }
+    public void setElapsedTime(long l)         { setPair(11, l); }
+    public void setDatetime(long l)            { setPair(12, l); }
+    public void setSequence(String s)          { setPair(13, s); }
     // New optional access log fields
-    public void setRemoteIP(String s) {
-        setPair(14, s);
-    }
-
-    public void setBytesSent(String s) {
-        setPair(15, s);
-    }
-
+    public void setRemoteIP(String s)          { setPair(14, s); }
+    public void setBytesSent(String s)         { setPair(15, s); }
+    public void setRequestElapsedTime(long l)  { setPair(17, l); }
+    public void setRequestFirstLine(String s)  { setPair(20, s); }
+    public void setAccessLogDatetime(String s) { setPair(21, s); }
+    public void setRemoteUser(String s)        { setPair(22, s); }
     public void setCookies(String name, String value) {
         kvplCookies.addKeyValuePair(name, value);
         setPair(16, kvplCookies);
     }
-
-    public void setRequestElapsedTime(long l) {
-        setPair(17, l);
-    }
-
     public void setRequestHeader(String name, String value) {
         kvplRequestHeaders.addKeyValuePair(name, value);
         setPair(18, kvplRequestHeaders);
     }
-
     public void setResponseHeader(String name, String value) {
         kvplResponseHeaders.addKeyValuePair(name, value);
         setPair(19, kvplResponseHeaders);
     }
 
-    public void setRequestFirstLine(String s) {
-        setPair(20, s);
-    }
+    public String getRequestStartTime()          { return getStringValue(0); }
+    public String getUriPath()                   { return getStringValue(1); }
+    public String getRequestMethod()             { return getStringValue(2); }
+    public String getQueryString()               { return getStringValue(3); }
+    public String getRequestHost()               { return getStringValue(4); }
+    public String getRequestPort()               { return getStringValue(5); }
+    public String getRemoteHost()                { return getStringValue(6); }
+    public String getUserAgent()                 { return getStringValue(7); }
+    public String getRequestProtocol()           { return getStringValue(8); }
+    public long getBytesReceived()               { return getLongValue(9); }
+    public int getResponseCode()                 { return getIntValue(10); }
+    public long getElapsedTime()                 { return getLongValue(11); }
+    public long getDatetime()                    { return getLongValue(12); }
+    public String getSequence()                  { return getStringValue(13); }
+    public String getRemoteIP()                  { return getStringValue(14); }
+    public String getBytesSent()                 { return getStringValue(15); }
+    public KeyValuePairList getCookies()         { return getValues(16); }
+    public long getRequestElapsedTime()          { return getLongValue(17); }
+    public KeyValuePairList getRequestHeaders()  { return getValues(18); }
+    public KeyValuePairList getResponseHeaders() { return getValues(19); }
+    public String getRequestFirstLine()          { return getStringValue(20); }
+    public String getAccessLogDatetime()         { return getStringValue(21); }
+    public String getRemoteUser()                { return getStringValue(22); }
 
-    public void setAccessLogDatetime(String s) {
-        setPair(21, s);
-    }
+    public static String getRequestStartTimeKey(int format)   { return nameAliases[format].aliases[0]; }
+    public static String getUriPathKey(int format)            { return nameAliases[format].aliases[1]; }
+    public static String getRequestMethodKey(int format)      { return nameAliases[format].aliases[2]; }
+    public static String getQueryStringKey(int format)        { return nameAliases[format].aliases[3]; }
+    public static String getRequestHostKey(int format)        { return nameAliases[format].aliases[4]; }
+    public static String getRequestPortKey(int format)        { return nameAliases[format].aliases[5]; }
+    public static String getRemoteHostKey(int format)         { return nameAliases[format].aliases[6]; }
+    public static String getUserAgentKey(int format)          { return nameAliases[format].aliases[7]; }
+    public static String getRequestProtocolKey(int format)    { return nameAliases[format].aliases[8]; }
+    public static String getBytesReceivedKey(int format)      { return nameAliases[format].aliases[9]; }
+    public static String getResponseCodeKey(int format)       { return nameAliases[format].aliases[10]; }
+    public static String getElapsedTimeKey(int format)        { return nameAliases[format].aliases[11]; }
+    public static String getDatetimeKey(int format)           { return nameAliases[format].aliases[12]; }
+    public static String getSequenceKey(int format)           { return nameAliases[format].aliases[13]; }
+    public static String getHostKey(int format)               { return nameAliases[format].aliases[14]; }
+    public static String getUserDirKey(int format)            { return nameAliases[format].aliases[15]; }
+    public static String getServerNameKey(int format)         { return nameAliases[format].aliases[16]; }
+    public static String getTypeKey(int format)               { return nameAliases[format].aliases[17]; }
+    public static String getRemoteIPKey(int format)           { return nameAliases[format].aliases[18]; }
+    public static String getBytesSentKey(int format)          { return nameAliases[format].aliases[19]; }
+    public static String getRequestElapsedTimeKey(int format) { return nameAliases[format].aliases[21]; }
+    public static String getRequestFirstLineKey(int format)   { return nameAliases[format].aliases[24]; }
+    public static String getAccessLogDatetimeKey(int format)  { return nameAliases[format].aliases[25]; }
+    public static String getRemoteUserKey(int format)         { return nameAliases[format].aliases[26]; }
 
-    public void setRemoteUser(String s) {
-        setPair(22, s);
-    }
-
-    public String getRequestStartTime() {
-        return getStringValue(0);
-    }
-
-    public String getUriPath() {
-        return getStringValue(1);
-    }
-
-    public String getRequestMethod() {
-        return getStringValue(2);
-    }
-
-    public String getQueryString() {
-        return getStringValue(3);
-    }
-
-    public String getRequestHost() {
-        return getStringValue(4);
-    }
-
-    public String getRequestPort() {
-        return getStringValue(5);
-    }
-
-    public String getRemoteHost() {
-        return getStringValue(6);
-    }
-
-    public String getUserAgent() {
-        return getStringValue(7);
-    }
-
-    public String getRequestProtocol() {
-        return getStringValue(8);
-    }
-
-    public long getBytesReceived() {
-        try {
-            return getLongValue(9);
-        } catch (Exception e) {
-            // Do nothing, the field hasn't been set in the logFormat
-        }
-        return -1;
-    }
-
-    public int getResponseCode() {
-        try {
-            return getIntValue(10);
-        } catch (Exception e) {
-            // Do nothing, the field hasn't been set in the logFormat
-        }
-        return -1;
-    }
-
-    public long getElapsedTime() {
-        try {
-            return getLongValue(11);
-        } catch (Exception e) {
-            // Do nothing, the field hasn't been set in the logFormat
-        }
-        return -1;
-    }
-
-    public long getDatetime() {
-        try {
-            return getLongValue(12);
-        } catch (Exception e) {
-            // Do nothing, the field hasn't been set in the logFormat
-        }
-        return -1;
-    }
-
-    public String getSequence() {
-        return getStringValue(13);
-    }
-
-    public String getRemoteIP() {
-        return getStringValue(14);
-    }
-
-    public String getBytesSent() {
-        return getStringValue(15);
-    }
-
-    public KeyValuePairList getCookies() {
-        return getValues(16);
-    }
-
-    public long getRequestElapsedTime() {
-        try {
-            return getLongValue(17);
-        } catch (Exception e) {
-            // Do nothing, the field hasn't been set in the logFormat
-        }
-        return -1;
-    }
-
-    public KeyValuePairList getRequestHeaders() {
-        return getValues(18);
-    }
-
-    public KeyValuePairList getResponseHeaders() {
-        return getValues(19);
-    }
-
-    public String getRequestFirstLine() {
-        return getStringValue(20);
-    }
-
-    public String getAccessLogDatetime() {
-        return getStringValue(21);
-    }
-
-    public String getRemoteUser() {
-        return getStringValue(22);
-    }
-
-    private KeyValuePairList getValues(int index) {
-        return (KeyValuePairList) getPairs()[index];
-    }
-
-    public static String getRequestStartTimeKey(FormatSpecifier format) {
-        return nameAliases[format.getValue()].aliases[0];
-    }
-
-    public static String getUriPathKey(FormatSpecifier format) {
-        return nameAliases[format.getValue()].aliases[1];
-    }
-
-    public static String getRequestMethodKey(FormatSpecifier format) {
-        return nameAliases[format.getValue()].aliases[2];
-    }
-
-    public static String getQueryStringKey(FormatSpecifier format) {
-        return nameAliases[format.getValue()].aliases[3];
-    }
-
-    public static String getRequestHostKey(FormatSpecifier format) {
-        return nameAliases[format.getValue()].aliases[4];
-    }
-
-    public static String getRequestPortKey(FormatSpecifier format) {
-        return nameAliases[format.getValue()].aliases[5];
-    }
-
-    public static String getRemoteHostKey(FormatSpecifier format) {
-        return nameAliases[format.getValue()].aliases[6];
-    }
-
-    public static String getUserAgentKey(FormatSpecifier format) {
-        return nameAliases[format.getValue()].aliases[7];
-    }
-
-    public static String getRequestProtocolKey(FormatSpecifier format) {
-        return nameAliases[format.getValue()].aliases[8];
-    }
-
-    public static String getBytesReceivedKey(FormatSpecifier format) {
-        return nameAliases[format.getValue()].aliases[9];
-    }
-
-    public static String getResponseCodeKey(FormatSpecifier format) {
-        return nameAliases[format.getValue()].aliases[10];
-    }
-
-    public static String getElapsedTimeKey(FormatSpecifier format) {
-        return nameAliases[format.getValue()].aliases[11];
-    }
-
-    public static String getDatetimeKey(FormatSpecifier format) {
-        return nameAliases[format.getValue()].aliases[12];
-    }
-
-    public static String getSequenceKey(FormatSpecifier format) {
-        return nameAliases[format.getValue()].aliases[13];
-    }
-
-    public static String getHostKey(FormatSpecifier format) {
-        return nameAliases[format.getValue()].aliases[14];
-    }
-
-    public static String getUserDirKey(FormatSpecifier format) {
-        return nameAliases[format.getValue()].aliases[15];
-    }
-
-    public static String getServerNameKey(FormatSpecifier format) {
-        return nameAliases[format.getValue()].aliases[16];
-    }
-
-    public static String getTypeKey(FormatSpecifier format) {
-        return nameAliases[format.getValue()].aliases[17];
-    }
-
-    public static String getRemoteIPKey(FormatSpecifier format) {
-        return nameAliases[format.getValue()].aliases[18];
-    }
-
-    public static String getBytesSentKey(FormatSpecifier format) {
-        return nameAliases[format.getValue()].aliases[19];
-    }
-
-    public static String getCookieKey(FormatSpecifier format, KeyValuePair kvp) {
+    public static String getCookieKey(int format, KeyValuePair kvp) {
         String cookieName = kvp.getKey();
-        if (cookieMap.containsKey(cookieName) && format.equals("JSON")) {
+        // We can only rename for JSON and not logstash collector, so check that it's JSON before renaming field
+        if (cookieMap.containsKey(cookieName) && (format == KEYS_JSON)) {
             return cookieMap.get(cookieName);
         }
-        return nameAliases[format.getValue()].aliases[20] + "_" + kvp.getKey();
+        return nameAliases[format].aliases[20] + "_" + cookieName;
     }
 
-    public static String getRequestElapsedTimeKey(FormatSpecifier format) {
-        return nameAliases[format.getValue()].aliases[21];
-    }
-
-    public static String getRequestHeaderKey(FormatSpecifier format, KeyValuePair kvp) {
+    public static String getRequestHeaderKey(int format, KeyValuePair kvp) {
         String requestHeader = kvp.getKey();
-        if (requestHeaderMap.containsKey(requestHeader) && format.equals("JSON")) {
+        if (requestHeaderMap.containsKey(requestHeader) && (format == KEYS_JSON)) {
             return requestHeaderMap.get(requestHeader);
         }
-        return nameAliases[format.getValue()].aliases[22] + "_" + kvp.getKey();
+        return nameAliases[format].aliases[22] + "_" + requestHeader;
     }
 
-    public static String getResponseHeaderKey(FormatSpecifier format, KeyValuePair kvp) {
+    public static String getResponseHeaderKey(int format, KeyValuePair kvp) {
         String responseHeader = kvp.getKey();
-        if (responseHeaderMap.containsKey(responseHeader) && format.equals("JSON")) {
+        if (responseHeaderMap.containsKey(responseHeader) && (format == KEYS_JSON)) {
             return responseHeaderMap.get(responseHeader);
         }
-        return nameAliases[format.getValue()].aliases[23] + "_" + kvp.getKey();
-    }
-
-    public static String getRequestFirstLineKey(FormatSpecifier format) {
-        return nameAliases[format.getValue()].aliases[24];
-    }
-
-    public static String getAccessLogDatetimeKey(FormatSpecifier format) {
-        return nameAliases[format.getValue()].aliases[25];
-    }
-
-    public static String getRemoteUserKey(FormatSpecifier format) {
-        return nameAliases[format.getValue()].aliases[26];
+        return nameAliases[format].aliases[23] + "_" + responseHeader;
     }
 
 }

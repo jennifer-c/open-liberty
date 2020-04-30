@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.ibm.websphere.ras.Tr;
@@ -31,12 +32,14 @@ import com.ibm.ws.http.channel.internal.values.AccessLogRequestHeaderValue;
 import com.ibm.ws.http.channel.internal.values.AccessLogResponseHeaderValue;
 import com.ibm.ws.http.channel.internal.values.AccessLogResponseSize;
 import com.ibm.ws.http.channel.internal.values.AccessLogStartTime;
+import com.ibm.ws.http.logging.internal.AccessLogRecordDataExt;
 import com.ibm.ws.http.logging.internal.AccessLogger.FormatSegment;
+import com.ibm.ws.logging.collector.CollectorJsonHelpers;
 import com.ibm.ws.logging.collector.LogFieldConstants;
 import com.ibm.ws.logging.data.AccessLogConfig;
 import com.ibm.ws.logging.data.AccessLogData;
 import com.ibm.ws.logging.data.AccessLogDataFormatter;
-import com.ibm.ws.logging.data.FormatSpecifier;
+import com.ibm.ws.logging.data.AccessLogDataFormatter.AccessLogDataFormatterBuilder;
 import com.ibm.ws.logging.data.JsonFieldAdder;
 import com.ibm.wsspi.collector.manager.BufferManager;
 import com.ibm.wsspi.collector.manager.Source;
@@ -56,22 +59,69 @@ public class AccessLogSource implements Source {
     private final String location = "memory";
     private static String USER_AGENT_HEADER = "User-Agent";
     public static final int MAX_USER_AGENT_LENGTH = 2048;
-    private SetterFormatter currentSF = new SetterFormatter();
-    public String jsonAccessLogFields = "";
-    public static String jsonAccessLogFieldsLogstash = "";
+    Map<Configuration, SetterFormatter> setterFormatterMap = new ConcurrentHashMap<Configuration, SetterFormatter>();
+    private SetterFormatter currentSF = new SetterFormatter("", "", "");
+    public String jsonAccessLogFieldsConfig = "";
+    public static String jsonAccessLogFieldsLogstashConfig = "";
     public Map<String, Object> configuration;
 
-    private static class SetterFormatter {
+    // A representation of the current configuration; to be used in the setterFormatterMap
+    private class Configuration {
         String logFormat;
         String loggingConfig;
         String logstashConfig;
-        List<AccessLogDataFieldSetter> setters;
-        AccessLogDataFormatter[] formatters = { null, null, null, null };
 
-        private SetterFormatter() {
-            this.logFormat = "";
-            this.loggingConfig = "";
-            this.logstashConfig = "";
+        private Configuration(String logFormat, String loggingConfig, String logstashConfig) {
+            this.logFormat = logFormat;
+            this.loggingConfig = loggingConfig;
+            this.logstashConfig = logstashConfig;
+        }
+
+        //@formatter:off
+        String getLogFormat()      { return this.logFormat; }
+        String getLoggingConfig()  { return this.loggingConfig; }
+        String getLogstashConfig() { return this.logstashConfig; }
+        //@formatter:on
+
+        // We need to put this object into a HashMap, so we're overriding hashCode
+        @Override
+        public int hashCode() {
+            int hash;
+            hash = logFormat.hashCode() * loggingConfig.hashCode() * logstashConfig.hashCode();
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            Configuration config = (Configuration) obj;
+            if (!config.getLogFormat().equals(this.logFormat) || !config.getLoggingConfig().equals(this.loggingConfig) || !config.getLogstashConfig().equals(this.logstashConfig))
+                return false;
+            return true;
+        }
+    }
+
+    private static class SetterFormatter {
+        // The HTTP access logging logFormat value, e.g. "%a %b"
+        String logFormat;
+        // The jsonAccessLogFields configuration value for JSON logging, default or logFormat
+        String loggingConfig;
+        // The jsonAccessLogFields configuration value for Logstash Collector, default or logFormat
+        String logstashConfig;
+        // List of formatters for each type of logging format; null if not applicable to current configuration
+        // { <default JSON logging>, <logFormat JSON logging>, <default logstashCollector>, <logFormat logstashCollector> }
+        AccessLogDataFormatter[] formatters = { null, null, null, null };
+        List<AccessLogDataFieldSetter> setters;
+
+        private SetterFormatter(String logFormat, String loggingConfig, String logstashConfig) {
+            this.logFormat = logFormat;
+            this.loggingConfig = loggingConfig;
+            this.logstashConfig = logstashConfig;
         }
 
         void setSettersAndFormatters(List<AccessLogDataFieldSetter> setters, AccessLogDataFormatter[] formatters) {
@@ -79,10 +129,12 @@ public class AccessLogSource implements Source {
             this.formatters = formatters;
         }
 
+        // Setters should not be modified to avoid concurrency issues with other threads using the same setter list
         List<AccessLogDataFieldSetter> getSetters() {
             return this.setters;
         }
 
+        // Formatters should not be modified to avoid concurrency issues with other threads using the same formatter list
         AccessLogDataFormatter[] getFormatters() {
             return this.formatters;
         }
@@ -91,12 +143,6 @@ public class AccessLogSource implements Source {
             if (!logFormat.equals(this.logFormat) || !loggingConfig.equals(this.loggingConfig) || !logstashConfig.equals(this.logstashConfig))
                 return true;
             return false;
-        }
-
-        void setFullConfig(String logFormat, String loggingConfig, String logstashConfig) {
-            this.logFormat = logFormat;
-            this.loggingConfig = loggingConfig;
-            this.logstashConfig = logstashConfig;
         }
     }
 
@@ -164,7 +210,7 @@ public class AccessLogSource implements Source {
         accessLogHandler = null;
     }
 
-    void addDefaultFields(Map<String, HashSet<Object>> map) {
+    private void addDefaultFields(Map<String, HashSet<Object>> map) {
         String[] defaultFields = { "%h", "%H", "%A", "%B", "%m", "%p", "%q", "%{R}W", "%s", "%U" };
         for (String s : defaultFields) {
             map.put(s, null);
@@ -175,11 +221,11 @@ public class AccessLogSource implements Source {
         map.put("%i", data);
     }
 
-    void initializeFieldMap(Map<String, HashSet<Object>> map, FormatSegment[] parsedFormat) {
-        if (jsonAccessLogFields.equals("default") || jsonAccessLogFieldsLogstash.equals("default")) {
+    private void initializeFieldMap(Map<String, HashSet<Object>> map, FormatSegment[] parsedFormat) {
+        if (jsonAccessLogFieldsConfig.equals("default") || jsonAccessLogFieldsLogstashConfig.equals("default")) {
             addDefaultFields(map);
         }
-        if (jsonAccessLogFields.equals("logFormat") || jsonAccessLogFieldsLogstash.equals("logFormat")) {
+        if (jsonAccessLogFieldsConfig.equals("logFormat") || jsonAccessLogFieldsLogstashConfig.equals("logFormat")) {
             for (FormatSegment s : parsedFormat) {
                 if (s.log != null) {
                     // cookies and headers will require data
@@ -198,7 +244,7 @@ public class AccessLogSource implements Source {
         }
     }
 
-    ArrayList<AccessLogDataFieldSetter> populateSetters(Map<String, HashSet<Object>> fields) {
+    private ArrayList<AccessLogDataFieldSetter> populateSetters(Map<String, HashSet<Object>> fields) {
 
         ArrayList<AccessLogDataFieldSetter> fieldSetters = new ArrayList<AccessLogDataFieldSetter>();
         for (String f : fields.keySet()) {
@@ -230,7 +276,7 @@ public class AccessLogSource implements Source {
                             });
                         }
                     } break;
-                case "%D": fieldSetters.add((ald, alrd) -> ald.setRequestElapsedTime(AccessLogElapsedTime.getElapsedTime(alrd.getResponse(), alrd.getRequest(), null))); break;
+                case "%D": fieldSetters.add((ald, alrd) -> ald.setRequestElapsedTime(AccessLogElapsedTime.getElapsedTimeForJSON(alrd.getResponse(), alrd.getRequest(), null))); break;
                 case "%i":
                     for (Object data : fields.get("%i")) {
                         if (data.equals(USER_AGENT_HEADER))
@@ -244,7 +290,7 @@ public class AccessLogSource implements Source {
                             fieldSetters.add((ald, alrd) -> ald.setResponseHeader((String) data, AccessLogResponseHeaderValue.getHeaderValue(alrd.getResponse(), alrd.getRequest(), data)));
                     } break;
                 case "%r": fieldSetters.add((ald, alrd) -> ald.setRequestFirstLine(AccessLogFirstLine.getFirstLineAsString(alrd.getResponse(), alrd.getRequest(), null))); break;
-                case "%t": fieldSetters.add((ald, alrd) -> ald.setRequestStartTime(AccessLogStartTime.getStartTimeAsString(alrd.getResponse(), alrd.getRequest(), null))); break;
+                case "%t": fieldSetters.add((ald, alrd) -> ald.setRequestStartTime(AccessLogStartTime.getStartTimeAsStringForJSON(alrd.getResponse(), alrd.getRequest(), null))); break;
                 case "%{t}W": fieldSetters.add((ald, alrd) -> ald.setAccessLogDatetime(AccessLogCurrentTime.getAccessLogCurrentTimeAsString(alrd.getResponse(), alrd.getRequest(), null))); break;
                 case "%u": fieldSetters.add((ald, alrd) -> ald.setRemoteUser(AccessLogRemoteUser.getRemoteUser(alrd.getResponse(), alrd.getRequest(), null))); break;
                 //@formatter:on
@@ -253,8 +299,8 @@ public class AccessLogSource implements Source {
         return fieldSetters;
     }
 
-    AccessLogDataFormatter populateCustomFormatters(FormatSegment[] parsedFormat, FormatSpecifier format) {
-        AccessLogDataFormatter formatter = new AccessLogDataFormatter();
+    AccessLogDataFormatter populateCustomFormatters(FormatSegment[] parsedFormat, int format) {
+        AccessLogDataFormatterBuilder builder = new AccessLogDataFormatterBuilder();
         boolean isFirstCookie = true;
         boolean isFirstRequestHeader = true;
         boolean isFirstResponseHeader = true;
@@ -263,123 +309,133 @@ public class AccessLogSource implements Source {
                 switch (s.log.getName()) {
                     // Original - default fields
                     //@formatter:off
-                    case "%h": formatter.add(addRemoteHostField     (format)); break;
-                    case "%H": formatter.add(addRequestProtocolField(format)); break;
-                    case "%A": formatter.add(addRequestHostField    (format)); break;
-                    case "%B": formatter.add(addBytesReceivedField  (format)); break;
-                    case "%m": formatter.add(addRequestMethodField  (format)); break;
-                    case "%p": formatter.add(addRequestPortField    (format)); break;
-                    case "%q": formatter.add(addQueryStringField    (format)); break;
-                    case "%{R}W": formatter.add(addElapsedTimeField (format)); break;
-                    case "%s": formatter.add(addResponseCodeField   (format)); break;
-                    case "%U": formatter.add(addUriPathField        (format)); break;
+                    case "%h": builder.add(addRemoteHostField     (format)); break;
+                    case "%H": builder.add(addRequestProtocolField(format)); break;
+                    case "%A": builder.add(addRequestHostField    (format)); break;
+                    case "%B": builder.add(addBytesReceivedField  (format)); break;
+                    case "%m": builder.add(addRequestMethodField  (format)); break;
+                    case "%p": builder.add(addRequestPortField    (format)); break;
+                    case "%q": builder.add(addQueryStringField    (format)); break;
+                    case "%{R}W": builder.add(addElapsedTimeField (format)); break;
+                    case "%s": builder.add(addResponseCodeField   (format)); break;
+                    case "%U": builder.add(addUriPathField        (format)); break;
                     // New - access log only fields
-                    case "%a": formatter.add(addRemoteIPField       (format)); break;
-                    case "%b": formatter.add(addBytesSentField      (format)); break;
+                    case "%a": builder.add(addRemoteIPField       (format)); break;
+                    case "%b": builder.add(addBytesSentField      (format)); break;
                     case "%C":
                         if (isFirstCookie) {
-                            formatter.add(addCookiesField(format));
+                            builder.add(addCookiesField(format));
                             isFirstCookie = false;
                         } break;
-                    case "%D": formatter.add(addRequestElapsedTimeField(format)); break;
+                    case "%D": builder.add(addRequestElapsedTimeField(format)); break;
                     case "%i":
                         if (s.data.equals(USER_AGENT_HEADER)) {
-                            formatter.add(addUserAgentField(format));
+                            builder.add(addUserAgentField(format));
                         } else if (isFirstRequestHeader) {
-                            formatter.add(addRequestHeaderField(format));
+                            builder.add(addRequestHeaderField(format));
                             isFirstRequestHeader = false;
                         } break;
                     case "%o":
                         if (isFirstResponseHeader) {
-                            formatter.add(addResponseHeaderField(format));
+                            builder.add(addResponseHeaderField(format));
                             isFirstResponseHeader = false;
                         } break;
-                    case "%r": formatter.add(addRequestFirstLineField    (format)); break;
-                    case "%t": formatter.add(addRequestStartTimeField    (format)); break;
-                    case "%{t}W": formatter.add(addAccessLogDatetimeField(format)); break;
-                    case "%u": formatter.add(addRemoteUserField          (format)); break;
+                    case "%r": builder.add(addRequestFirstLineField    (format)); break;
+                    case "%t": builder.add(addRequestStartTimeField    (format)); break;
+                    case "%{t}W": builder.add(addAccessLogDatetimeField(format)); break;
+                    case "%u": builder.add(addRemoteUserField          (format)); break;
                     //@formatter:on
                 }
             }
         }
-        return formatter;
+        //@formatter:off
+        builder.add(addDatetimeField(format))  // Sequence, present in all access logs
+               .add(addSequenceField(format)); // Datetime, present in all access logs
+        //@formatter:on
+        return new AccessLogDataFormatter(builder);
 
     }
 
-    private AccessLogDataFormatter populateDefaultFormatters(FormatSpecifier format) {
+    private AccessLogDataFormatter populateDefaultFormatters(int format) {
 
-        AccessLogDataFormatter formatter = new AccessLogDataFormatter();
+        // Note: @formatter is Eclipse's formatter - does not relate to the AccessLogDataFormatter
+        //@formatter:off
+        AccessLogDataFormatterBuilder builder = new AccessLogDataFormatterBuilder();
+        builder.add(addRemoteHostField(format))  // %h
+        .add(addRequestProtocolField  (format))  // %H
+        .add(addRequestHostField      (format))  // %A
+        .add(addBytesReceivedField    (format))  // %B
+        .add(addRequestMethodField    (format))  // %m
+        .add(addRequestPortField      (format))  // %p
+        .add(addQueryStringField      (format))  // %q
+        .add(addElapsedTimeField      (format))  // %{R}W
+        .add(addResponseCodeField     (format))  // %s
+        .add(addUriPathField          (format))  // %U
+        .add(addUserAgentField        (format))  // User agent
+        .add(addDatetimeField         (format))  // Datetime, present in all access logs
+        .add(addSequenceField         (format)); // Sequence, present in all access logs
 
-        formatter = new AccessLogDataFormatter();
-        // %h
-        formatter.add(addRemoteHostField(format));
-        // %H
-        formatter.add(addRequestProtocolField(format));
-        // %A
-        formatter.add(addRequestHostField(format));
-        // %B
-        formatter.add(addBytesReceivedField(format));
-        // %m
-        formatter.add(addRequestMethodField(format));
-        // %p
-        formatter.add(addRequestPortField(format));
-        // %q
-        formatter.add(addQueryStringField(format));
-        // %{R}W
-        formatter.add(addElapsedTimeField(format));
-        // %s
-        formatter.add(addResponseCodeField(format));
-        // %U
-        formatter.add(addUriPathField(format));
-        // User agent
-        formatter.add(addUserAgentField(format));
-        return formatter;
+        return new AccessLogDataFormatter(builder);
+        //@formatter:on
+    }
+
+    private void initializeSetterFormatter(String formatString, String jsonAccessLogFieldsConfig, String jsonAccessLogFieldsLogstashConfig, FormatSegment[] parsedFormat,
+                                           AtomicLong seq) {
+        SetterFormatter newSF = new SetterFormatter(formatString, jsonAccessLogFieldsConfig, jsonAccessLogFieldsLogstashConfig);
+        List<AccessLogDataFieldSetter> fieldSetters = new ArrayList<AccessLogDataFieldSetter>();
+        AccessLogDataFormatter[] formatters = { null, null, null, null };
+        Map<String, HashSet<Object>> fieldsToAdd = new HashMap<String, HashSet<Object>>();
+
+        // Create the mapping of fields to add:{<format key> : <data value/null>}
+        // Prevents duplicates
+        initializeFieldMap(fieldsToAdd, parsedFormat);
+
+        // Create setter list
+        fieldSetters = populateSetters(fieldsToAdd);
+        // These fields are always added
+        fieldSetters.add((ald, alrd) -> ald.setSequence(alrd.getStartTime() + "_" + String.format("%013X", seq.incrementAndGet())));
+        fieldSetters.add((ald, alrd) -> ald.setDatetime(alrd.getTimestamp()));
+
+        if (jsonAccessLogFieldsConfig.equals("default")) {
+            formatters[0] = populateDefaultFormatters(AccessLogData.KEYS_JSON);
+        } else if (jsonAccessLogFieldsConfig.equals("logFormat")) {
+            formatters[1] = populateCustomFormatters(parsedFormat, AccessLogData.KEYS_JSON);
+        }
+
+        if (jsonAccessLogFieldsLogstashConfig.equals("default")) {
+            formatters[2] = populateDefaultFormatters(AccessLogData.KEYS_LOGSTASH);
+        } else if (jsonAccessLogFieldsLogstashConfig.equals("logFormat")) {
+            formatters[3] = populateCustomFormatters(parsedFormat, AccessLogData.KEYS_LOGSTASH);
+        }
+        newSF.setSettersAndFormatters(fieldSetters, formatters);
+
+        currentSF = newSF;
     }
 
     private class AccessLogHandler implements AccessLogForwarder {
-
         private final AtomicLong seq = new AtomicLong();
 
         /** {@inheritDoc} */
         @Override
-        public void process(AccessLogRecordData recordData, FormatSegment[] parsedFormat, String formatString) {
-            jsonAccessLogFields = AccessLogConfig.jsonAccessLogFields;
-            if (currentSF.checkConfigChange(formatString, jsonAccessLogFields, jsonAccessLogFieldsLogstash)) {
-                SetterFormatter newSF = new SetterFormatter();
-                List<AccessLogDataFieldSetter> fieldSetters = new ArrayList<AccessLogDataFieldSetter>();
-                AccessLogDataFormatter[] formatters = { null, null, null, null };
-                Map<String, HashSet<Object>> fieldsToAdd = new HashMap<String, HashSet<Object>>();
 
-                // Create the mapping of fields to add:{<format key> : <data value/null>}
-                // Prevents duplicates
-                initializeFieldMap(fieldsToAdd, parsedFormat);
+        public void process(AccessLogRecordData recordData) {
+            // The logFormat, as a string: e.g. "%a %b %C"
+            String formatString = ((AccessLogRecordDataExt) recordData).getFormatString();
+            // A parsed version of the logFormat
+            FormatSegment[] parsedFormat = ((AccessLogRecordDataExt) recordData).getParsedFormat();
+            jsonAccessLogFieldsConfig = AccessLogConfig.jsonAccessLogFieldsConfig;
 
-                newSF.setFullConfig(formatString, jsonAccessLogFields, jsonAccessLogFieldsLogstash);
+            Configuration config = new Configuration(formatString, jsonAccessLogFieldsConfig, jsonAccessLogFieldsLogstashConfig);
 
-                // Create setter list
-                fieldSetters = populateSetters(fieldsToAdd);
-                // These fields are always added
-                fieldSetters.add((ald, alrd) -> ald.setSequence(alrd.getStartTime() + "_" + String.format("%013X", seq.incrementAndGet())));
-                fieldSetters.add((ald, alrd) -> ald.setDatetime(alrd.getTimestamp()));
-
-                if (jsonAccessLogFields.equals("default")) {
-                    formatters[0] = populateDefaultFormatters(FormatSpecifier.JSON);
+            if (currentSF.checkConfigChange(formatString, jsonAccessLogFieldsConfig, jsonAccessLogFieldsLogstashConfig))
+                if (setterFormatterMap.containsKey(config)) {
+                    // If we've created a setterFormatter in the past for this configuration, we'll use it instead of making a new one
+                    currentSF = setterFormatterMap.get(config);
+                } else {
+                    initializeSetterFormatter(formatString, jsonAccessLogFieldsConfig, jsonAccessLogFieldsLogstashConfig, parsedFormat, seq);
+                    setterFormatterMap.put(config, currentSF);
                 }
-                if (jsonAccessLogFields.equals("logFormat")) {
-                    formatters[1] = populateCustomFormatters(parsedFormat, FormatSpecifier.JSON);
-                }
-                if (jsonAccessLogFieldsLogstash.equals("default")) {
-                    formatters[2] = populateDefaultFormatters(FormatSpecifier.LOGSTASH);
-                }
-                if (jsonAccessLogFieldsLogstash.equals("logFormat")) {
-                    formatters[3] = populateCustomFormatters(parsedFormat, FormatSpecifier.LOGSTASH);
-                }
-
-                newSF.setSettersAndFormatters(fieldSetters, formatters);
-
-                currentSF = newSF;
-
-            }
+            // Take a copy of the current SetterFormatter because we don't want the SetterFormatter to change mid-use
             SetterFormatter temp = currentSF;
             AccessLogData accessLogData = new AccessLogData();
             for (AccessLogDataFieldSetter s : temp.getSetters()) {
@@ -387,11 +443,10 @@ public class AccessLogSource implements Source {
             }
 
             accessLogData.addFormatters(temp.getFormatters());
-            // collectorJSONUtils does the rest of the work from here
-
             accessLogData.setSourceName(sourceName);
 
             bufferMgr.add(accessLogData);
+            // CollectorJSONUtils does the rest of the work from here
 
             if (TraceComponent.isAnyTracingEnabled() && tc.isDebugEnabled()) {
                 Tr.debug(tc, "Added a event to buffer " + accessLogData);
@@ -399,43 +454,44 @@ public class AccessLogSource implements Source {
         }
     }
 
-    private static JsonFieldAdder addRemoteHostField(FormatSpecifier format) {
+    // Field formatters
+    private static JsonFieldAdder addRemoteHostField(int format) {
         return (jsonBuilder, ald) -> {
             return jsonBuilder.addField(AccessLogData.getRemoteHostKey(format), ald.getRemoteHost(), false, true);
         };
     }
 
-    private static JsonFieldAdder addRequestProtocolField(FormatSpecifier format) {
+    private static JsonFieldAdder addRequestProtocolField(int format) {
         return (jsonBuilder, ald) -> {
             return jsonBuilder.addField(AccessLogData.getRequestProtocolKey(format), ald.getRequestProtocol(), false, true);
         };
     }
 
-    private static JsonFieldAdder addRequestHostField(FormatSpecifier format) {
+    private static JsonFieldAdder addRequestHostField(int format) {
         return (jsonBuilder, ald) -> {
             return jsonBuilder.addField(AccessLogData.getRequestHostKey(format), ald.getRequestHost(), false, true);
         };
     }
 
-    private static JsonFieldAdder addBytesReceivedField(FormatSpecifier format) {
+    private static JsonFieldAdder addBytesReceivedField(int format) {
         return (jsonBuilder, ald) -> {
             return jsonBuilder.addField(AccessLogData.getBytesReceivedKey(format), ald.getBytesReceived(), false);
         };
     }
 
-    private static JsonFieldAdder addRequestMethodField(FormatSpecifier format) {
+    private static JsonFieldAdder addRequestMethodField(int format) {
         return (jsonBuilder, ald) -> {
             return jsonBuilder.addField(AccessLogData.getRequestMethodKey(format), ald.getRequestMethod(), false, true);
         };
     }
 
-    private static JsonFieldAdder addRequestPortField(FormatSpecifier format) {
+    private static JsonFieldAdder addRequestPortField(int format) {
         return (jsonBuilder, ald) -> {
             return jsonBuilder.addField(AccessLogData.getRequestPortKey(format), ald.getRequestPort(), false, true);
         };
     }
 
-    private static JsonFieldAdder addQueryStringField(FormatSpecifier format) {
+    private static JsonFieldAdder addQueryStringField(int format) {
         return ((jsonBuilder, ald) -> {
             String jsonQueryString = ald.getQueryString();
             if (jsonQueryString != null) {
@@ -449,37 +505,37 @@ public class AccessLogSource implements Source {
         });
     }
 
-    private static JsonFieldAdder addElapsedTimeField(FormatSpecifier format) {
+    private static JsonFieldAdder addElapsedTimeField(int format) {
         return (jsonBuilder, ald) -> {
             return jsonBuilder.addField(AccessLogData.getElapsedTimeKey(format), ald.getElapsedTime(), false);
         };
     }
 
-    private static JsonFieldAdder addResponseCodeField(FormatSpecifier format) {
+    private static JsonFieldAdder addResponseCodeField(int format) {
         return (jsonBuilder, ald) -> {
             return jsonBuilder.addField(AccessLogData.getResponseCodeKey(format), ald.getResponseCode(), false);
         };
     }
 
-    private static JsonFieldAdder addUriPathField(FormatSpecifier format) {
+    private static JsonFieldAdder addUriPathField(int format) {
         return (jsonBuilder, ald) -> {
             return jsonBuilder.addField(AccessLogData.getUriPathKey(format), ald.getUriPath(), false, true);
         };
     }
 
-    private static JsonFieldAdder addRemoteIPField(FormatSpecifier format) {
+    private static JsonFieldAdder addRemoteIPField(int format) {
         return (jsonBuilder, ald) -> {
             return jsonBuilder.addField(AccessLogData.getRemoteIPKey(format), ald.getRemoteIP(), false, true);
         };
     }
 
-    private static JsonFieldAdder addBytesSentField(FormatSpecifier format) {
+    private static JsonFieldAdder addBytesSentField(int format) {
         return ((jsonBuilder, ald) -> {
             return jsonBuilder.addField(AccessLogData.getBytesSentKey(format), ald.getBytesSent(), false, true);
         });
     }
 
-    private static JsonFieldAdder addCookiesField(FormatSpecifier format) {
+    private static JsonFieldAdder addCookiesField(int format) {
         return (jsonBuilder, ald) -> {
             if (ald.getCookies() != null)
                 ald.getCookies().getList().forEach(c -> jsonBuilder.addField(AccessLogData.getCookieKey(format, c), c.getStringValue(), true, true));
@@ -487,13 +543,13 @@ public class AccessLogSource implements Source {
         };
     }
 
-    private static JsonFieldAdder addRequestElapsedTimeField(FormatSpecifier format) {
+    private static JsonFieldAdder addRequestElapsedTimeField(int format) {
         return (jsonBuilder, ald) -> {
             return jsonBuilder.addField(AccessLogData.getRequestElapsedTimeKey(format), ald.getRequestElapsedTime(), false);
         };
     }
 
-    private static JsonFieldAdder addUserAgentField(FormatSpecifier format) {
+    private static JsonFieldAdder addUserAgentField(int format) {
         return (jsonBuilder, ald) -> {
             String userAgent = ald.getUserAgent();
             if (userAgent != null && userAgent.length() > MAX_USER_AGENT_LENGTH)
@@ -502,7 +558,7 @@ public class AccessLogSource implements Source {
         };
     }
 
-    private static JsonFieldAdder addRequestHeaderField(FormatSpecifier format) {
+    private static JsonFieldAdder addRequestHeaderField(int format) {
         return (jsonBuilder, ald) -> {
             if (ald.getRequestHeaders() != null)
                 ald.getRequestHeaders().getList().forEach(h -> jsonBuilder.addField(AccessLogData.getRequestHeaderKey(format, h), h.getStringValue(), false, true));
@@ -510,7 +566,7 @@ public class AccessLogSource implements Source {
         };
     }
 
-    private static JsonFieldAdder addResponseHeaderField(FormatSpecifier format) {
+    private static JsonFieldAdder addResponseHeaderField(int format) {
         return (jsonBuilder, ald) -> {
             if (ald.getResponseHeaders() != null)
                 ald.getResponseHeaders().getList().forEach(h -> jsonBuilder.addField(AccessLogData.getResponseHeaderKey(format, h), h.getStringValue(), true, true));
@@ -518,29 +574,42 @@ public class AccessLogSource implements Source {
         };
     }
 
-    private static JsonFieldAdder addRequestFirstLineField(FormatSpecifier format) {
+    private static JsonFieldAdder addRequestFirstLineField(int format) {
         return (jsonBuilder, ald) -> {
             return jsonBuilder.addField(AccessLogData.getRequestFirstLineKey(format), ald.getRequestFirstLine(), false, true);
         };
     }
 
-    private static JsonFieldAdder addRequestStartTimeField(FormatSpecifier format) {
+    private static JsonFieldAdder addRequestStartTimeField(int format) {
         return (jsonBuilder, ald) -> {
             return jsonBuilder.addField(AccessLogData.getRequestStartTimeKey(format), ald.getRequestStartTime(), false, true);
         };
     }
 
-    private static JsonFieldAdder addAccessLogDatetimeField(FormatSpecifier format) {
+    private static JsonFieldAdder addAccessLogDatetimeField(int format) {
         return (jsonBuilder, ald) -> {
             return jsonBuilder.addField(AccessLogData.getAccessLogDatetimeKey(format), ald.getAccessLogDatetime(), false, true);
         };
     }
 
-    private static JsonFieldAdder addRemoteUserField(FormatSpecifier format) {
+    private static JsonFieldAdder addRemoteUserField(int format) {
         return (jsonBuilder, ald) -> {
             if (ald.getRemoteUser() != null && !ald.getRemoteUser().isEmpty())
                 return jsonBuilder.addField(AccessLogData.getRemoteUserKey(format), ald.getRemoteUser(), false, true);
             return jsonBuilder;
+        };
+    }
+
+    private static JsonFieldAdder addSequenceField(int format) {
+        return (jsonBuilder, ald) -> {
+            return jsonBuilder.addField(AccessLogData.getSequenceKey(format), ald.getSequence(), false, true);
+        };
+    }
+
+    private static JsonFieldAdder addDatetimeField(int format) {
+        return (jsonBuilder, ald) -> {
+            String datetime = CollectorJsonHelpers.dateFormatTL.get().format(ald.getDatetime());
+            return jsonBuilder.addField(AccessLogData.getDatetimeKey(format), datetime, false, true);
         };
     }
 }

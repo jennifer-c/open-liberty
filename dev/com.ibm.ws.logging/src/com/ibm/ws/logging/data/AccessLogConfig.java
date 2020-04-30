@@ -11,5 +11,5 @@
 package com.ibm.ws.logging.data;
 
 public class AccessLogConfig {
-    public static String jsonAccessLogFields;
+    public static String jsonAccessLogFieldsConfig;
 }

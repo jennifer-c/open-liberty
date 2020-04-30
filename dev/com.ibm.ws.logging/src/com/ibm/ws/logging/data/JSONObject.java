@@ -97,22 +97,6 @@ public class JSONObject {
         }
 
         /**
-         * Add preformatted field that is omittable, primarily used for adding "ibm_tags" and "tags" fields
-         */
-        public JSONObjectBuilder addPreformattedField(String name, String preformattedValue) {
-            if (name.isEmpty() || preformattedValue.isEmpty())
-                return this;
-
-            if (name.equals(OMIT_FIELDS_STRING))
-                return this;
-
-            prepForNewField();
-
-            jsonBuilder.append("\"" + name + "\":" + preformattedValue);
-            return this;
-        }
-
-        /**
          * Add Integer field value
          */
         public JSONObjectBuilder addField(String name, int value, boolean jsonEscapeName) {

@@ -114,7 +114,7 @@
         	ibm:variable="com.ibm.ws.logging.json.access.log.fields"
         	id="jsonAccessLogFields" required="false" type="String" default="default" ibm:beta="true">
         	<Option label="%json.access.log.fields.default" value="default"/>
-            <Option label="%json.access.log.fields.default.logformat" value="logFormat"/>
+            <Option label="%json.access.log.fields.logformat" value="logFormat"/>
         </AD>
         	
     </OCD>

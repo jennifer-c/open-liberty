@@ -456,9 +456,10 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
             // Forward the log data to AccessLogForwarder's
             if (!LogForwarderManager.getAccessLogForwarders().isEmpty()) {
                 AccessLogRecordData recordData = toAccessLogRecordData(request, response, version, userId, remoteAddr, numBytes);
+                AccessLogRecordDataExt recordDataExt = new AccessLogRecordDataExt(recordData, parsedFormat, getFormatString());
                 for (AccessLogForwarder forwarder : LogForwarderManager.getAccessLogForwarders()) {
                     try {
-                        forwarder.process(recordData, parsedFormat, getFormatString());
+                        forwarder.process(recordDataExt);
                     } catch (Throwable t) {
                         FFDCFilter.processException(t, getClass().getName() + ".log", "136", this);
                         if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {

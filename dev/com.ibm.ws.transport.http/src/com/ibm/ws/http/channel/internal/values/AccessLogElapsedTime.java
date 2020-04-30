@@ -18,15 +18,13 @@ import com.ibm.wsspi.http.channel.HttpResponseMessage;
 
 public class AccessLogElapsedTime extends AccessLogData {
 
+    public static ThreadLocal<Long> elapsedTime = new ThreadLocal<>();
+
     public AccessLogElapsedTime() {
         super("%D");
         // %D - Elapsed time, in milliseconds, of the request/response exchange
         // Millisecond accuracy, microsecond precision
     }
-
-    // Need some way to "remember" the elapsedTime value, aka the System.nanoTime - startTime
-    // Does it need to be static?
-    static long currentTime = 0;
 
     @Override
     public boolean set(StringBuilder accessLogEntry,
@@ -34,10 +32,12 @@ public class AccessLogElapsedTime extends AccessLogData {
                        Object data) {
         long startTime = getStartTime(response, request, data);
         if (startTime != 0) {
-            currentTime = System.nanoTime();
-            long elapsedTime = currentTime - startTime;
-            accessLogEntry.append(TimeUnit.NANOSECONDS.toMicros(elapsedTime));
+            long elapsedTime = System.nanoTime() - startTime;
+            long elapsedTimeInMicroseconds = TimeUnit.NANOSECONDS.toMicros(elapsedTime);
+            AccessLogElapsedTime.elapsedTime.set(elapsedTimeInMicroseconds);
+            accessLogEntry.append(elapsedTimeInMicroseconds);
         } else {
+            elapsedTime.set((long) -1);
             accessLogEntry.append("-");
         }
 
@@ -57,13 +57,7 @@ public class AccessLogElapsedTime extends AccessLogData {
         return startTime;
     }
 
-    public static long getElapsedTime(HttpResponseMessage response, HttpRequestMessage request, Object data) {
-        long startTime = getStartTime(response, request, data);
-        if (startTime != 0) {
-            long elapsedTime = currentTime - startTime;
-            return TimeUnit.NANOSECONDS.toMicros(elapsedTime);
-        } else {
-            return 0;
-        }
+    public static long getElapsedTimeForJSON(HttpResponseMessage response, HttpRequestMessage request, Object data) {
+        return elapsedTime.get();
     }
 }
