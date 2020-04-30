@@ -27,7 +27,7 @@ public class ConfigurationSetterLogstash {
     }
 
     public void setConfig(String logFormat) {
-        AccessLogSource.jsonAccessLogFieldsLogstash = logFormat;
+        AccessLogSource.jsonAccessLogFieldsLogstashConfig = logFormat;
     }
 
     @Deactivate

@@ -18,6 +18,8 @@ import com.ibm.wsspi.http.channel.HttpResponseMessage;
 
 public class AccessLogCurrentTime extends AccessLogData {
 
+    public static ThreadLocal<String> accessLogDatetime = new ThreadLocal<>();
+
     public AccessLogCurrentTime() {
         super("%{t}W");
         // %{format}t
@@ -38,9 +40,12 @@ public class AccessLogCurrentTime extends AccessLogData {
     public boolean set(StringBuilder accessLogEntry,
                        HttpResponseMessage response, HttpRequestMessage request, Object data) {
         if (data == null) {
+            String currentTime = HttpDispatcher.getDateFormatter().getNCSATime(new Date(System.currentTimeMillis()));
             accessLogEntry.append("[");
-            accessLogEntry.append(HttpDispatcher.getDateFormatter().getNCSATime(new Date(System.currentTimeMillis())));
+            accessLogEntry.append(currentTime);
             accessLogEntry.append("]");
+            accessLogDatetime.set("[" + currentTime + "]");
+
         } else {
             // just print out what was there
             accessLogEntry.append("%{").append(data).append("}W");
@@ -50,14 +55,6 @@ public class AccessLogCurrentTime extends AccessLogData {
     }
 
     public static String getAccessLogCurrentTimeAsString(HttpResponseMessage response, HttpRequestMessage request, Object data) {
-        StringBuilder accessLogCurrentTime = new StringBuilder();
-        if (data == null) {
-            accessLogCurrentTime.append("[");
-            accessLogCurrentTime.append(HttpDispatcher.getDateFormatter().getNCSATime(new Date(System.currentTimeMillis())));
-            accessLogCurrentTime.append("]");
-        } else {
-            accessLogCurrentTime.append("%{").append(data).append("}W");
-        }
-        return accessLogCurrentTime.toString();
+        return accessLogDatetime.get();
     }
 }

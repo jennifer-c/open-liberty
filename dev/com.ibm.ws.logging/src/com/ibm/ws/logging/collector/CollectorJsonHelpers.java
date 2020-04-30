@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import com.ibm.ws.logging.data.AccessLogData;
 import com.ibm.ws.logging.data.AuditData;
 import com.ibm.ws.logging.data.FFDCData;
-import com.ibm.ws.logging.data.FormatSpecifier;
 import com.ibm.ws.logging.data.JSONObject;
 import com.ibm.ws.logging.data.JSONObject.JSONObjectBuilder;
 import com.ibm.ws.logging.data.KeyValuePair;
@@ -87,7 +86,7 @@ public class CollectorJsonHelpers {
             return "";
     }
 
-    protected static ThreadLocal<BurstDateFormat> dateFormatTL = new ThreadLocal<BurstDateFormat>() {
+    public static ThreadLocal<BurstDateFormat> dateFormatTL = new ThreadLocal<BurstDateFormat>() {
         @Override
         protected BurstDateFormat initialValue() {
             return new BurstDateFormat(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
@@ -386,34 +385,23 @@ public class CollectorJsonHelpers {
         return jsonBuilder;
     }
 
-    protected static JSONObjectBuilder startAccessLogJsonFields(String hostName, String wlpUserDir, String serverName, FormatSpecifier fs) {
+    protected static JSONObjectBuilder startAccessLogJsonFields(String hostName, String wlpUserDir, String serverName, int format) {
         JSONObjectBuilder jsonBuilder = new JSONObject.JSONObjectBuilder();
         String tempStartFields = startAccessLogJsonFields;
 
-        if (tempStartFields != null) {
+        if (tempStartFields != null && format == AccessLogData.KEYS_JSON) {
+            // Only applies for JSON fields, or else we'd print the wrong fields for Logstash Collector
             jsonBuilder.addPreformatted(tempStartFields);
         } else {
             //@formatter:off
-            jsonBuilder.addField(AccessLogData.getTypeKey(fs), CollectorConstants.ACCESS_LOG_EVENT_TYPE, false, false)
-            .addField(AccessLogData.getHostKey(fs), hostName, false, false)
-            .addField(AccessLogData.getUserDirKey(fs), wlpUserDir, false, true)
-            .addField(AccessLogData.getServerNameKey(fs), serverName, false, false);
+            jsonBuilder.addField(AccessLogData.getTypeKey(format), CollectorConstants.ACCESS_LOG_EVENT_TYPE, false, false)
+            .addField(AccessLogData.getHostKey(format), hostName, false, false)
+            .addField(AccessLogData.getUserDirKey(format), wlpUserDir, false, true)
+            .addField(AccessLogData.getServerNameKey(format), serverName, false, false);
             //@formatter:on
-            startAccessLogJsonFields = jsonBuilder.toString();
+            if (format == AccessLogData.KEYS_JSON)
+                startAccessLogJsonFields = jsonBuilder.toString();
         }
-        return jsonBuilder;
-    }
-
-    protected static JSONObjectBuilder startAccessLogJsonFieldsLogstash(String hostName, String wlpUserDir, String serverName, FormatSpecifier fs) {
-        JSONObjectBuilder jsonBuilder = new JSONObject.JSONObjectBuilder();
-
-        //@formatter:off
-        jsonBuilder.addField(AccessLogData.getTypeKey(fs), CollectorConstants.ACCESS_LOG_EVENT_TYPE, false, false)
-        .addField(AccessLogData.getHostKey(fs), hostName, false, false)
-        .addField(AccessLogData.getUserDirKey(fs), wlpUserDir, false, true)
-        .addField(AccessLogData.getServerNameKey(fs), serverName, false, false);
-        //@formatter:on
-
         return jsonBuilder;
     }
 

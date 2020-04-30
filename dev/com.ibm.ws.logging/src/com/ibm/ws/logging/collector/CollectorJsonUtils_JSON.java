@@ -17,7 +17,6 @@ import com.ibm.ws.logging.data.AccessLogData;
 import com.ibm.ws.logging.data.AccessLogDataFormatter;
 import com.ibm.ws.logging.data.AuditData;
 import com.ibm.ws.logging.data.FFDCData;
-import com.ibm.ws.logging.data.FormatSpecifier;
 import com.ibm.ws.logging.data.GenericData;
 import com.ibm.ws.logging.data.JSONObject.JSONObjectBuilder;
 import com.ibm.ws.logging.data.KeyValuePair;
@@ -106,23 +105,16 @@ public class CollectorJsonUtils_JSON {
     public static String jsonifyAccess(String wlpUserDir, String serverName, String hostName, Object event, String[] tags) {
 
         AccessLogData accessLogData = (AccessLogData) event;
-        JSONObjectBuilder jsonBuilder = CollectorJsonHelpers.startAccessLogJsonFields(hostName, wlpUserDir, serverName, FormatSpecifier.JSON);
+        JSONObjectBuilder jsonBuilder = CollectorJsonHelpers.startAccessLogJsonFields(hostName, wlpUserDir, serverName, AccessLogData.KEYS_JSON);
 
         AccessLogDataFormatter[] formatters = accessLogData.getFormatters();
 
+        // Only one of these will not be null - there is only one formatter per event. If both are not null, we made a mistake earlier in AccessLogSource
         if (formatters[1] != null) {
             formatters[1].populate(jsonBuilder, accessLogData);
-        }
-
-        if (formatters[0] != null) {
+        } else if (formatters[0] != null) {
             formatters[0].populate(jsonBuilder, accessLogData);
         }
-
-        String datetime = CollectorJsonHelpers.dateFormatTL.get().format(accessLogData.getDatetime());
-        //@formatter:off
-        jsonBuilder.addField(AccessLogData.getDatetimeKey(FormatSpecifier.JSON), datetime, false, true)
-                   .addField(AccessLogData.getSequenceKey(FormatSpecifier.JSON), accessLogData.getSequence(), false, true);
-        //@formatter:on
         if (tags != null) {
             jsonBuilder.addField("\"ibm_tags\":", CollectorJsonHelpers.jsonifyTags(tags), false, false);
         }

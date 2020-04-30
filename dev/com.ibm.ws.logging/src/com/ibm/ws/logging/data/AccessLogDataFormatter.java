@@ -20,25 +20,36 @@ import com.ibm.ws.logging.data.JSONObject.JSONObjectBuilder;
 public class AccessLogDataFormatter {
 
     // list of actions to populate JSONObjectBuilder
-    private final ArrayList<JsonFieldAdder> jsonFieldAdders = new ArrayList<JsonFieldAdder>();
+    private ArrayList<JsonFieldAdder> jsonFieldAdders = new ArrayList<JsonFieldAdder>();
 
-    public AccessLogDataFormatter() {
+    public static class AccessLogDataFormatterBuilder {
+        private final ArrayList<JsonFieldAdder> jsonFieldAdders = new ArrayList<JsonFieldAdder>();
+
+        public AccessLogDataFormatterBuilder() {
+        }
+
+        public AccessLogDataFormatterBuilder add(JsonFieldAdder jsonFieldAdder) {
+            this.jsonFieldAdders.add(jsonFieldAdder);
+            return this;
+        }
+
+        public AccessLogDataFormatter build() {
+            AccessLogDataFormatter formatter = new AccessLogDataFormatter(this);
+            return formatter;
+        }
 
     }
 
-    // adds another JsonFieldAdder to the list
-    public AccessLogDataFormatter add(JsonFieldAdder jsonFieldAdder) {
-        this.jsonFieldAdders.add(jsonFieldAdder);
-        return this;
+    public AccessLogDataFormatter(AccessLogDataFormatterBuilder builder) {
+        this.jsonFieldAdders = builder.jsonFieldAdders;
     }
 
     // adds fields to JSONObjectBuilder by running all jsonFieldAdders
-    public JSONObjectBuilder populate(JSONObjectBuilder j, AccessLogData a) {
+    public JSONObjectBuilder populate(JSONObjectBuilder jsonObject, AccessLogData a) {
         for (JsonFieldAdder jfa : jsonFieldAdders) {
-            jfa.populate(j, a);
+            jfa.populate(jsonObject, a);
         }
-        return j;
+        return jsonObject;
     }
-    // each jsonFieldAdder formats a single field from AccessLogData as it adds it to the JSONObjectBuilder
 
 }

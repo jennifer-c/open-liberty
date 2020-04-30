@@ -52,7 +52,7 @@ import com.ibm.wsspi.http.logging.LogForwarderManager;
 /**
  * Implementation of an NCSA access log file. This will perform the disk IO on
  * a background thread, not on the caller's thread.
- * 
+ *
  */
 @Component(configurationPid = "com.ibm.ws.http.log.access", configurationPolicy = ConfigurationPolicy.REQUIRE, immediate = true, service = AccessLogger.class,
            property = { "service.vendor=IBM" })
@@ -110,7 +110,7 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
 
     /**
      * Constructor of this NCSA access log file.
-     * 
+     *
      * @param filename
      * @throws FileNotFoundException
      */
@@ -205,7 +205,7 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
 
     /**
      * Get the access log format that is the string format
-     * 
+     *
      * @return String
      */
     @Trivial
@@ -227,7 +227,7 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
 
     /**
      * Set the access log format to a String
-     * 
+     *
      * @param format
      */
     @Trivial
@@ -455,9 +455,10 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
             // Forward the log data to AccessLogForwarder's
             if (!LogForwarderManager.getAccessLogForwarders().isEmpty()) {
                 AccessLogRecordData recordData = toAccessLogRecordData(request, response, version, userId, remoteAddr, numBytes);
+                AccessLogRecordDataExt recordDataExt = new AccessLogRecordDataExt(recordData, parsedFormat, getFormatString());
                 for (AccessLogForwarder forwarder : LogForwarderManager.getAccessLogForwarders()) {
                     try {
-                        forwarder.process(recordData, parsedFormat, getFormatString());
+                        forwarder.process(recordDataExt);
                     } catch (Throwable t) {
                         FFDCFilter.processException(t, getClass().getName() + ".log", "136", this);
                         if (TraceComponent.isAnyTracingEnabled() && tc.isEventEnabled()) {
@@ -610,7 +611,7 @@ public class AccessLogger extends LoggerOffThread implements AccessLog {
 
     /**
      * Return the string representation of this file.
-     * 
+     *
      * @return String
      */
     @Override
