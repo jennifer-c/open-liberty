@@ -18,33 +18,38 @@ import com.ibm.ws.logging.data.JSONObject.JSONObjectBuilder;
  *
  */
 public class AccessLogDataFormatter {
-    enum Format {
-//        FORMATTER_DEFAULT_JSON,
-//        FORMATTER_CUSTOM_JSON,
-        // FORMATTER_LOGSTASH_COLLECTOR_1.0_DEFAULT
-        // FORMATTER_LOGSTASH_COLLECTOR_1.0_CUSTOM
-    }
-
-    public AccessLogDataFormatter() {
-        // do something?
-    }
 
     // list of actions to populate JSONObjectBuilder
-    private final ArrayList<JsonFieldAdder> jsonFieldAdders = new ArrayList<JsonFieldAdder>();
+    private ArrayList<JsonFieldAdder> jsonFieldAdders = new ArrayList<JsonFieldAdder>();
 
-    // adds another JsonFieldAdder to the list
-    public AccessLogDataFormatter add(JsonFieldAdder jsonFieldAdder) {
-        this.jsonFieldAdders.add(jsonFieldAdder);
-        return this;
+    public static class AccessLogDataFormatterBuilder {
+        private final ArrayList<JsonFieldAdder> jsonFieldAdders = new ArrayList<JsonFieldAdder>();
+
+        public AccessLogDataFormatterBuilder() {
+        }
+
+        public AccessLogDataFormatterBuilder add(JsonFieldAdder jsonFieldAdder) {
+            this.jsonFieldAdders.add(jsonFieldAdder);
+            return this;
+        }
+
+        public AccessLogDataFormatter build() {
+            AccessLogDataFormatter formatter = new AccessLogDataFormatter(this);
+            return formatter;
+        }
+
+    }
+
+    public AccessLogDataFormatter(AccessLogDataFormatterBuilder builder) {
+        this.jsonFieldAdders = builder.jsonFieldAdders;
     }
 
     // adds fields to JSONObjectBuilder by running all jsonFieldAdders
-    public JSONObjectBuilder populate(JSONObjectBuilder j, AccessLogData a) {
+    public JSONObjectBuilder populate(JSONObjectBuilder jsonObject, AccessLogData a) {
         for (JsonFieldAdder jfa : jsonFieldAdders) {
-            jfa.populate(j, a);
+            jfa.populate(jsonObject, a);
         }
-        return j;
+        return jsonObject;
     }
-    // each jsonFieldAdder formats a single field from AccessLogData as it adds it to the JSONObjectBuilder
 
 }

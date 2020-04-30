@@ -10,8 +10,6 @@
  *******************************************************************************/
 package com.ibm.wsspi.http.logging;
 
-import com.ibm.ws.http.logging.internal.AccessLogger.FormatSegment;
-
 /**
  * The Access log forwarder is invoked after each http request.
  */
@@ -22,5 +20,5 @@ public interface AccessLogForwarder {
      * @param parsedFormat A parsed version of logFormat
      * @param formatString The original logFormat string
      */
-    public void process(AccessLogRecordData logData, FormatSegment[] parsedFormat, String formatString);
+    public void process(AccessLogRecordData logData);
 }
