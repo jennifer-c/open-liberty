@@ -19,6 +19,7 @@ import com.ibm.wsspi.http.channel.HttpRequestMessage;
 import com.ibm.wsspi.http.channel.HttpResponseMessage;
 
 public class AccessLogStartTime extends AccessLogData {
+    public static ThreadLocal<String> startTimeFormatted = new ThreadLocal<>();
 
     public AccessLogStartTime() {
         super("%t");
@@ -33,9 +34,11 @@ public class AccessLogStartTime extends AccessLogData {
 
         if (startTime != 0) {
             Date startDate = new Date(startTime);
+            String formattedDate = HttpDispatcher.getDateFormatter().getNCSATime(startDate);
             accessLogEntry.append("[");
-            accessLogEntry.append(HttpDispatcher.getDateFormatter().getNCSATime(startDate));
+            accessLogEntry.append(formattedDate);
             accessLogEntry.append("]");
+            startTimeFormatted.set("[" + formattedDate + "]");
         } else {
             accessLogEntry.append("-");
         }
@@ -57,17 +60,7 @@ public class AccessLogStartTime extends AccessLogData {
         return startTime;
     }
 
-    public static String getStartTimeAsString(HttpResponseMessage response, HttpRequestMessage request, Object data) {
-        StringBuilder requestStartTime = new StringBuilder();
-        long startTime = getStartTime(response, request, data);
-        if (startTime != 0) {
-            Date startDate = new Date(startTime);
-            requestStartTime.append("[");
-            requestStartTime.append(HttpDispatcher.getDateFormatter().getNCSATime(startDate));
-            requestStartTime.append("]");
-            return requestStartTime.toString();
-        }
-        // If we couldn't get the start time, just return null to not have the field show up in the JSON logs
-        return null;
+    public static String getStartTimeAsStringForJSON(HttpResponseMessage response, HttpRequestMessage request, Object data) {
+        return startTimeFormatted.get();
     }
 }
