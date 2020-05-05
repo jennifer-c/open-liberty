@@ -108,9 +108,6 @@ public class LogProviderConfigImpl implements LogProviderConfig {
     /** Mapping to use for json.fields */
     protected volatile String jsonFields = "";
 
-    /** Boolean to check if omission of jsonFields is allowed (for beta) */
-    protected volatile Boolean omitJsonFields = false;
-
     /** Which access log format fields should be printed as JSON logs */
     protected volatile String jsonAccessLogFields = LoggingConstants.DEFAULT_JSON_ACCESS_LOG_FIELDS;
 
@@ -410,10 +407,6 @@ public class LogProviderConfigImpl implements LogProviderConfig {
 
     public String getjsonFields() {
         return jsonFields;
-    }
-
-    public Boolean getOmitJsonFields() {
-        return omitJsonFields;
     }
 
     public String getjsonAccessLogFields() {

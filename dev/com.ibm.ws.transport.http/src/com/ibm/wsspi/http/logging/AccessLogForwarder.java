@@ -14,11 +14,5 @@ package com.ibm.wsspi.http.logging;
  * The Access log forwarder is invoked after each http request.
  */
 public interface AccessLogForwarder {
-    /**
-     *
-     * @param logData
-     * @param parsedFormat A parsed version of logFormat
-     * @param formatString The original logFormat string
-     */
     public void process(AccessLogRecordData logData);
 }

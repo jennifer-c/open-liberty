@@ -14,9 +14,6 @@ import java.util.ArrayList;
 
 import com.ibm.ws.logging.data.JSONObject.JSONObjectBuilder;
 
-/**
- *
- */
 public class AccessLogDataFormatter {
 
     // list of actions to populate JSONObjectBuilder
@@ -37,10 +34,9 @@ public class AccessLogDataFormatter {
             AccessLogDataFormatter formatter = new AccessLogDataFormatter(this);
             return formatter;
         }
-
     }
 
-    public AccessLogDataFormatter(AccessLogDataFormatterBuilder builder) {
+    private AccessLogDataFormatter(AccessLogDataFormatterBuilder builder) {
         this.jsonFieldAdders = builder.jsonFieldAdders;
     }
 

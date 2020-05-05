@@ -187,7 +187,7 @@ public class BaseTraceService implements TrService {
     protected volatile boolean isoDateFormat = false;
 
     /** If value is logFormat, JSON logs will be formatted to include the fields specified in http access logging's logFormat field */
-    protected volatile String jsonAccessLogFields = "default";
+    protected volatile String jsonAccessLogFields = LoggingConstants.DEFAULT_JSON_ACCESS_LOG_FIELDS;
 
     /** Writer sending messages to the messages.log file */
     protected volatile TraceWriter messagesLog = null;

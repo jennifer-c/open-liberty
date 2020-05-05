@@ -110,11 +110,13 @@ public class CollectorJsonUtils_JSON {
         AccessLogDataFormatter[] formatters = accessLogData.getFormatters();
 
         // Only one of these will not be null - there is only one formatter per event. If both are not null, we made a mistake earlier in AccessLogSource
-        if (formatters[1] != null) {
+        if (formatters[1] != null)
             formatters[1].populate(jsonBuilder, accessLogData);
-        } else if (formatters[0] != null) {
+        else if (formatters[0] != null)
             formatters[0].populate(jsonBuilder, accessLogData);
-        }
+        else
+            throw new RuntimeException("There is no formatter available for this event.");
+
         if (tags != null) {
             jsonBuilder.addPreformattedField("ibm_tags", CollectorJsonHelpers.jsonifyTags(tags));
         }

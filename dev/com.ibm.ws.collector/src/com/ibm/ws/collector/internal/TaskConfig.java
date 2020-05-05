@@ -73,6 +73,7 @@ public class TaskConfig {
             this.maxFieldLength = maxFieldLength;
             return this;
         }
+
     }
 
     private TaskConfig(Builder builder) {

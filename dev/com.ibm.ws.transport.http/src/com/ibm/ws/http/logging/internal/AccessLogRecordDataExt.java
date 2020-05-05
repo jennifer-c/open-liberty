@@ -20,12 +20,12 @@ import com.ibm.wsspi.http.logging.AccessLogRecordData;
  */
 public class AccessLogRecordDataExt implements AccessLogRecordData {
 
-    AccessLogRecordData delegateRecordData;
+    AccessLogRecordData delegate;
     FormatSegment[] parsedFormat;
     String formatString;
 
     AccessLogRecordDataExt(AccessLogRecordData alrd, FormatSegment[] parsedFormat, String formatString) {
-        this.delegateRecordData = alrd;
+        this.delegate = alrd;
         this.parsedFormat = parsedFormat;
         this.formatString = formatString;
     }
@@ -40,56 +40,56 @@ public class AccessLogRecordDataExt implements AccessLogRecordData {
 
     @Override
     public HttpRequestMessage getRequest() {
-        return delegateRecordData.getRequest();
+        return delegate.getRequest();
     }
 
     @Override
     public HttpResponseMessage getResponse() {
-        return delegateRecordData.getResponse();
+        return delegate.getResponse();
     }
 
     @Override
     public long getTimestamp() {
-        return delegateRecordData.getTimestamp();
+        return delegate.getTimestamp();
     }
 
     @Override
     public String getVersion() {
-        return delegateRecordData.getVersion();
+        return delegate.getVersion();
     }
 
     @Override
     public String getUserId() {
-        return delegateRecordData.getUserId();
+        return delegate.getUserId();
     }
 
     @Override
     public String getRemoteAddress() {
-        return delegateRecordData.getRemoteAddress();
+        return delegate.getRemoteAddress();
     }
 
     @Override
     public long getBytesWritten() {
-        return delegateRecordData.getBytesWritten();
+        return delegate.getBytesWritten();
     }
 
     @Override
     public long getStartTime() {
-        return delegateRecordData.getStartTime();
+        return delegate.getStartTime();
     }
 
     @Override
     public long getElapsedTime() {
-        return delegateRecordData.getElapsedTime();
+        return delegate.getElapsedTime();
     }
 
     @Override
     public String getLocalIP() {
-        return delegateRecordData.getLocalIP();
+        return delegate.getLocalIP();
     }
 
     @Override
     public String getLocalPort() {
-        return delegateRecordData.getLocalPort();
+        return delegate.getLocalPort();
     }
 }

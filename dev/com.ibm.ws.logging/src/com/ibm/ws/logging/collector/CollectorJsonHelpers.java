@@ -32,6 +32,7 @@ public class CollectorJsonHelpers {
 
     private static String startMessageJson = null;
     private static String startMessageJsonFields = null;
+    private static String startAccessLogLogstashCollector = null;
     private static String startTraceJson = null;
     private static String startTraceJsonFields = null;
     private static String startFFDCJson = null;
@@ -92,14 +93,6 @@ public class CollectorJsonHelpers {
             return new BurstDateFormat(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
         }
     };
-
-    // Only the jsonifyAccess function uses this variant
-    protected static boolean addToJSON(StringBuilder sb, String name, String value, boolean jsonEscapeName,
-                                       boolean jsonEscapeValue, boolean trim, boolean isFirstField, boolean isQuoteless, boolean isPartOfLogFormat) {
-        if (isPartOfLogFormat && value != null)
-            return (addToJSON(sb, name, value, jsonEscapeName, jsonEscapeValue, trim, isFirstField, isQuoteless));
-        return false;
-    }
 
     protected static boolean addToJSON(StringBuilder sb, String name, String value, boolean jsonEscapeName,
                                        boolean jsonEscapeValue, boolean trim, boolean isFirstField) {
@@ -396,10 +389,14 @@ public class CollectorJsonHelpers {
     protected static JSONObjectBuilder startAccessLogJsonFields(String hostName, String wlpUserDir, String serverName, int format) {
         JSONObjectBuilder jsonBuilder = new JSONObject.JSONObjectBuilder();
         String tempStartFields = startAccessLogJsonFields;
+        String tempStartFieldsLogstash = startAccessLogLogstashCollector;
 
-        if (tempStartFields != null && format == AccessLogData.KEYS_JSON) {
-            // Only applies for JSON fields, or else we'd print the wrong fields for Logstash Collector
-            jsonBuilder.addPreformatted(tempStartFields);
+        if (tempStartFields != null) {
+            if (format == AccessLogData.KEYS_JSON)
+                jsonBuilder.addPreformatted(tempStartFields);
+        } else if (tempStartFieldsLogstash != null) {
+            if (format == AccessLogData.KEYS_LOGSTASH)
+                jsonBuilder.addPreformatted(tempStartFieldsLogstash);
         } else {
             //@formatter:off
             jsonBuilder.addField(AccessLogData.getTypeKey(format), CollectorConstants.ACCESS_LOG_EVENT_TYPE, false, false)
@@ -409,6 +406,8 @@ public class CollectorJsonHelpers {
             //@formatter:on
             if (format == AccessLogData.KEYS_JSON)
                 startAccessLogJsonFields = jsonBuilder.toString();
+            else if (format == AccessLogData.KEYS_LOGSTASH)
+                startAccessLogLogstashCollector = jsonBuilder.toString();
         }
         return jsonBuilder;
     }
