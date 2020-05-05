@@ -32,6 +32,7 @@ public class CollectorJsonHelpers {
 
     private static String startMessageJson = null;
     private static String startMessageJsonFields = null;
+    private static String startAccessLogLogstashFields = null;
     private static String startTraceJson = null;
     private static String startTraceJsonFields = null;
     private static String startFFDCJson = null;
@@ -388,10 +389,15 @@ public class CollectorJsonHelpers {
     protected static JSONObjectBuilder startAccessLogJsonFields(String hostName, String wlpUserDir, String serverName, int format) {
         JSONObjectBuilder jsonBuilder = new JSONObject.JSONObjectBuilder();
         String tempStartFields = startAccessLogJsonFields;
+        String tempStartFieldsLogstash = startAccessLogLogstashFields;
 
-        if (tempStartFields != null && format == AccessLogData.KEYS_JSON) {
-            // Only applies for JSON fields, or else we'd print the wrong fields for Logstash Collector
-            jsonBuilder.addPreformatted(tempStartFields);
+        if (tempStartFields != null) {
+            if (format == AccessLogData.KEYS_JSON)
+                jsonBuilder.addPreformatted(tempStartFields);
+            else if (format == AccessLogData.KEYS_LOGSTASH)
+                jsonBuilder.addPreformatted(tempStartFieldsLogstash);
+            else
+                throw new RuntimeException("Invalid format: " + format + ". Valid formats are 0 (JSON) and 1 (Logstash Collector).");
         } else {
             //@formatter:off
             jsonBuilder.addField(AccessLogData.getTypeKey(format), CollectorConstants.ACCESS_LOG_EVENT_TYPE, false, false)
@@ -401,6 +407,10 @@ public class CollectorJsonHelpers {
             //@formatter:on
             if (format == AccessLogData.KEYS_JSON)
                 startAccessLogJsonFields = jsonBuilder.toString();
+            else if (format == AccessLogData.KEYS_JSON)
+                startAccessLogLogstashFields = jsonBuilder.toString();
+            else
+                throw new RuntimeException("Invalid format: " + format + ". Valid formats are 0 (JSON) and 1 (Logstash Collector).");
         }
         return jsonBuilder;
     }

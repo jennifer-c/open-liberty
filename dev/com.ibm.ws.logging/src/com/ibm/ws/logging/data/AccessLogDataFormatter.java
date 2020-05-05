@@ -37,7 +37,6 @@ public class AccessLogDataFormatter {
             AccessLogDataFormatter formatter = new AccessLogDataFormatter(this);
             return formatter;
         }
-
     }
 
     public AccessLogDataFormatter(AccessLogDataFormatterBuilder builder) {

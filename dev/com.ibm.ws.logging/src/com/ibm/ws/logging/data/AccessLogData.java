@@ -231,7 +231,7 @@ public class AccessLogData extends GenericData {
 
     public static String getCookieKey(int format, KeyValuePair kvp) {
         String cookieName = kvp.getKey();
-        // We can only rename for JSON and not logstash collector, so check that it's JSON before renaming field
+        // We only support renaming JSON fields, not logstashCollector fields - so check that it's JSON before renaming field
         if (cookieMap.containsKey(cookieName) && (format == KEYS_JSON)) {
             return cookieMap.get(cookieName);
         }
