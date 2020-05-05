@@ -18,7 +18,8 @@ import com.ibm.wsspi.http.channel.HttpResponseMessage;
 
 public class AccessLogElapsedTime extends AccessLogData {
 
-    public static ThreadLocal<Long> elapsedTime = new ThreadLocal<>();
+    // We're assuming that the methods below that use this elapsedTime will be called on the same thread
+    private static ThreadLocal<Long> elapsedTime = new ThreadLocal<>();
 
     public AccessLogElapsedTime() {
         super("%D");
@@ -32,9 +33,8 @@ public class AccessLogElapsedTime extends AccessLogData {
                        Object data) {
         long startTime = getStartTime(response, request, data);
         if (startTime != 0) {
-            long elapsedTime = System.nanoTime() - startTime;
-            long elapsedTimeInMicroseconds = TimeUnit.NANOSECONDS.toMicros(elapsedTime);
-            AccessLogElapsedTime.elapsedTime.set(elapsedTimeInMicroseconds);
+            long elapsedTimeInMicroseconds = TimeUnit.NANOSECONDS.toMicros(System.nanoTime() - startTime);
+            elapsedTime.set(elapsedTimeInMicroseconds);
             accessLogEntry.append(elapsedTimeInMicroseconds);
         } else {
             elapsedTime.set((long) -1);

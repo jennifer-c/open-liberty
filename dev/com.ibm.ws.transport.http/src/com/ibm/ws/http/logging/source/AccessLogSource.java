@@ -60,15 +60,17 @@ public class AccessLogSource implements Source {
     private static String USER_AGENT_HEADER = "User-Agent";
     public static final int MAX_USER_AGENT_LENGTH = 2048;
     Map<Configuration, SetterFormatter> setterFormatterMap = new ConcurrentHashMap<Configuration, SetterFormatter>();
-    private SetterFormatter currentSF = new SetterFormatter("", "", "");
-    public String jsonAccessLogFieldsConfig = "";
+    public static String jsonAccessLogFieldsConfig = "";
     public static String jsonAccessLogFieldsLogstashConfig = "";
     public Map<String, Object> configuration;
 
     // A representation of the current configuration; to be used in the setterFormatterMap
     private class Configuration {
+        // The HTTP access logging logFormat value, e.g. "%a %b"
         String logFormat;
+        // The jsonAccessLogFields configuration value for JSON logging, default or logFormat
         String loggingConfig;
+        // The jsonAccessLogFields configuration value for Logstash Collector, default or logFormat
         String logstashConfig;
 
         private Configuration(String logFormat, String loggingConfig, String logstashConfig) {
@@ -83,12 +85,16 @@ public class AccessLogSource implements Source {
         String getLogstashConfig() { return this.logstashConfig; }
         //@formatter:on
 
-        // We need to put this object into a HashMap, so we're overriding hashCode
+        // We need to put this object into a HashMap, so we're overriding hashCode and equals
         @Override
         public int hashCode() {
-            int hash;
-            hash = logFormat.hashCode() * loggingConfig.hashCode() * logstashConfig.hashCode();
-            return hash;
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + getEnclosingInstance().hashCode();
+            result = prime * result + ((logFormat == null) ? 0 : logFormat.hashCode());
+            result = prime * result + ((loggingConfig == null) ? 0 : loggingConfig.hashCode());
+            result = prime * result + ((logstashConfig == null) ? 0 : logstashConfig.hashCode());
+            return result;
         }
 
         @Override
@@ -99,29 +105,29 @@ public class AccessLogSource implements Source {
                 return false;
             if (getClass() != obj.getClass())
                 return false;
-            Configuration config = (Configuration) obj;
-            if (!config.getLogFormat().equals(this.logFormat) || !config.getLoggingConfig().equals(this.loggingConfig) || !config.getLogstashConfig().equals(this.logstashConfig))
+            Configuration other = (Configuration) obj;
+            if (!getEnclosingInstance().equals(other.getEnclosingInstance()))
+                return false;
+            if (!other.getLogFormat().equals(this.logFormat) || !other.getLoggingConfig().equals(this.loggingConfig) || !other.getLogstashConfig().equals(this.logstashConfig))
                 return false;
             return true;
+        }
+
+        private AccessLogSource getEnclosingInstance() {
+            return AccessLogSource.this;
         }
     }
 
     private static class SetterFormatter {
-        // The HTTP access logging logFormat value, e.g. "%a %b"
-        String logFormat;
-        // The jsonAccessLogFields configuration value for JSON logging, default or logFormat
-        String loggingConfig;
-        // The jsonAccessLogFields configuration value for Logstash Collector, default or logFormat
-        String logstashConfig;
+        // An object that contains the values of logFormat, JSON logging config, and logstash config
+        Configuration config;
         // List of formatters for each type of logging format; null if not applicable to current configuration
         // { <default JSON logging>, <logFormat JSON logging>, <default logstashCollector>, <logFormat logstashCollector> }
         AccessLogDataFormatter[] formatters = { null, null, null, null };
         List<AccessLogDataFieldSetter> setters;
 
-        private SetterFormatter(String logFormat, String loggingConfig, String logstashConfig) {
-            this.logFormat = logFormat;
-            this.loggingConfig = loggingConfig;
-            this.logstashConfig = logstashConfig;
+        private SetterFormatter(Configuration config) {
+            this.config = config;
         }
 
         void setSettersAndFormatters(List<AccessLogDataFieldSetter> setters, AccessLogDataFormatter[] formatters) {
@@ -137,12 +143,6 @@ public class AccessLogSource implements Source {
         // Formatters should not be modified to avoid concurrency issues with other threads using the same formatter list
         AccessLogDataFormatter[] getFormatters() {
             return this.formatters;
-        }
-
-        boolean checkConfigChange(String logFormat, String loggingConfig, String logstashConfig) {
-            if (!logFormat.equals(this.logFormat) || !loggingConfig.equals(this.loggingConfig) || !logstashConfig.equals(this.logstashConfig))
-                return true;
-            return false;
         }
     }
 
@@ -210,7 +210,7 @@ public class AccessLogSource implements Source {
         accessLogHandler = null;
     }
 
-    private void addDefaultFields(Map<String, HashSet<Object>> map) {
+    private static void addDefaultFields(Map<String, HashSet<Object>> map) {
         String[] defaultFields = { "%h", "%H", "%A", "%B", "%m", "%p", "%q", "%{R}W", "%s", "%U" };
         for (String s : defaultFields) {
             map.put(s, null);
@@ -221,7 +221,7 @@ public class AccessLogSource implements Source {
         map.put("%i", data);
     }
 
-    private void initializeFieldMap(Map<String, HashSet<Object>> map, FormatSegment[] parsedFormat) {
+    private static void initializeFieldMap(Map<String, HashSet<Object>> map, FormatSegment[] parsedFormat) {
         if (jsonAccessLogFieldsConfig.equals("default") || jsonAccessLogFieldsLogstashConfig.equals("default")) {
             addDefaultFields(map);
         }
@@ -244,7 +244,7 @@ public class AccessLogSource implements Source {
         }
     }
 
-    private ArrayList<AccessLogDataFieldSetter> populateSetters(Map<String, HashSet<Object>> fields) {
+    private static ArrayList<AccessLogDataFieldSetter> populateSetters(Map<String, HashSet<Object>> fields) {
 
         ArrayList<AccessLogDataFieldSetter> fieldSetters = new ArrayList<AccessLogDataFieldSetter>();
         for (String f : fields.keySet()) {
@@ -299,7 +299,7 @@ public class AccessLogSource implements Source {
         return fieldSetters;
     }
 
-    AccessLogDataFormatter populateCustomFormatters(FormatSegment[] parsedFormat, int format) {
+    private static AccessLogDataFormatter populateCustomFormatters(FormatSegment[] parsedFormat, int format) {
         AccessLogDataFormatterBuilder builder = new AccessLogDataFormatterBuilder();
         boolean isFirstCookie = true;
         boolean isFirstRequestHeader = true;
@@ -352,11 +352,11 @@ public class AccessLogSource implements Source {
         builder.add(addDatetimeField(format))  // Sequence, present in all access logs
                .add(addSequenceField(format)); // Datetime, present in all access logs
         //@formatter:on
-        return new AccessLogDataFormatter(builder);
 
+        return builder.build();
     }
 
-    private AccessLogDataFormatter populateDefaultFormatters(int format) {
+    private static AccessLogDataFormatter populateDefaultFormatters(int format) {
 
         // Note: @formatter is Eclipse's formatter - does not relate to the AccessLogDataFormatter
         //@formatter:off
@@ -375,13 +375,12 @@ public class AccessLogSource implements Source {
         .add(addDatetimeField         (format))  // Datetime, present in all access logs
         .add(addSequenceField         (format)); // Sequence, present in all access logs
 
-        return new AccessLogDataFormatter(builder);
+        return builder.build();
         //@formatter:on
     }
 
-    private void initializeSetterFormatter(String formatString, String jsonAccessLogFieldsConfig, String jsonAccessLogFieldsLogstashConfig, FormatSegment[] parsedFormat,
-                                           AtomicLong seq) {
-        SetterFormatter newSF = new SetterFormatter(formatString, jsonAccessLogFieldsConfig, jsonAccessLogFieldsLogstashConfig);
+    private static SetterFormatter createSetterFormatter(Configuration config, FormatSegment[] parsedFormat, AtomicLong seq) {
+        SetterFormatter newSF = new SetterFormatter(config);
         List<AccessLogDataFieldSetter> fieldSetters = new ArrayList<AccessLogDataFieldSetter>();
         AccessLogDataFormatter[] formatters = { null, null, null, null };
         Map<String, HashSet<Object>> fieldsToAdd = new HashMap<String, HashSet<Object>>();
@@ -409,7 +408,7 @@ public class AccessLogSource implements Source {
         }
         newSF.setSettersAndFormatters(fieldSetters, formatters);
 
-        currentSF = newSF;
+        return newSF;
     }
 
     private class AccessLogHandler implements AccessLogForwarder {
@@ -427,22 +426,20 @@ public class AccessLogSource implements Source {
 
             Configuration config = new Configuration(formatString, jsonAccessLogFieldsConfig, jsonAccessLogFieldsLogstashConfig);
 
-            if (currentSF.checkConfigChange(formatString, jsonAccessLogFieldsConfig, jsonAccessLogFieldsLogstashConfig))
-                if (setterFormatterMap.containsKey(config)) {
-                    // If we've created a setterFormatter in the past for this configuration, we'll use it instead of making a new one
-                    currentSF = setterFormatterMap.get(config);
-                } else {
-                    initializeSetterFormatter(formatString, jsonAccessLogFieldsConfig, jsonAccessLogFieldsLogstashConfig, parsedFormat, seq);
-                    setterFormatterMap.put(config, currentSF);
-                }
-            // Take a copy of the current SetterFormatter because we don't want the SetterFormatter to change mid-use
-            SetterFormatter temp = currentSF;
+            SetterFormatter currentSF = setterFormatterMap.get(config);
+            if (currentSF == null) {
+                currentSF = createSetterFormatter(config, parsedFormat, seq);
+                setterFormatterMap.put(config, currentSF);
+            }
+
             AccessLogData accessLogData = new AccessLogData();
-            for (AccessLogDataFieldSetter s : temp.getSetters()) {
+            // Fill in our accessLogData data values using the setters
+            for (AccessLogDataFieldSetter s : currentSF.getSetters()) {
                 s.add(accessLogData, recordData);
             }
 
-            accessLogData.addFormatters(temp.getFormatters());
+            // Then add the formatters to print out the appropriate fields
+            accessLogData.addFormatters(currentSF.getFormatters());
             accessLogData.setSourceName(sourceName);
 
             bufferMgr.add(accessLogData);

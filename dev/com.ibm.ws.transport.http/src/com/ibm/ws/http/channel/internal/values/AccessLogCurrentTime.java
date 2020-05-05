@@ -18,7 +18,8 @@ import com.ibm.wsspi.http.channel.HttpResponseMessage;
 
 public class AccessLogCurrentTime extends AccessLogData {
 
-    public static ThreadLocal<String> accessLogDatetime = new ThreadLocal<>();
+    // We're assuming that the methods below that use this datetime will be called on the same thread
+    private static ThreadLocal<String> accessLogDatetime = new ThreadLocal<>();
 
     public AccessLogCurrentTime() {
         super("%{t}W");
@@ -39,13 +40,11 @@ public class AccessLogCurrentTime extends AccessLogData {
     @Override
     public boolean set(StringBuilder accessLogEntry,
                        HttpResponseMessage response, HttpRequestMessage request, Object data) {
-        // Should we just use "getAccessLogCurrentTimeAsString"? Will performance be impacted?
         if (data == null) {
             String currentTime = HttpDispatcher.getDateFormatter().getNCSATime(new Date(System.currentTimeMillis()));
-            accessLogEntry.append("[");
-            accessLogEntry.append(currentTime);
-            accessLogEntry.append("]");
-            accessLogDatetime.set("[" + currentTime + "]");
+            String currentTimeFormatted = "[" + currentTime + "]";
+            accessLogEntry.append(currentTimeFormatted);
+            accessLogDatetime.set(currentTimeFormatted);
 
         } else {
             // just print out what was there
