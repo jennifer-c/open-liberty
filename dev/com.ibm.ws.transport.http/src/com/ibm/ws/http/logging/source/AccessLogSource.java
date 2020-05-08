@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -411,6 +412,17 @@ public class AccessLogSource implements Source {
         return newSF;
     }
 
+    private void removeDuplicates(FormatSegment[] parsedFormat) {
+        Set<String> fieldName = new HashSet<String>();
+        for (FormatSegment fs : parsedFormat) {
+            if (fs.log != null) {
+                if (!fieldName.add(fs.log.getName()))
+                    // Making it null will remove the duplicate print without messing around with the array dimensions
+                    fs.log = null;
+            }
+        }
+    }
+
     private class AccessLogHandler implements AccessLogForwarder {
         private final AtomicLong seq = new AtomicLong();
 
@@ -422,6 +434,7 @@ public class AccessLogSource implements Source {
             String formatString = ((AccessLogRecordDataExt) recordData).getFormatString();
             // A parsed version of the logFormat
             FormatSegment[] parsedFormat = ((AccessLogRecordDataExt) recordData).getParsedFormat();
+            removeDuplicates(parsedFormat);
             jsonAccessLogFieldsConfig = AccessLogConfig.jsonAccessLogFieldsConfig;
 
             Configuration config = new Configuration(formatString, jsonAccessLogFieldsConfig, jsonAccessLogFieldsLogstashConfig);
