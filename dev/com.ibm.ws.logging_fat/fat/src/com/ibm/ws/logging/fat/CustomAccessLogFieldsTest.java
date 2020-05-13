@@ -519,20 +519,25 @@ public class CustomAccessLogFieldsTest {
         HttpURLConnection con = null;
         try {
             URL url = new URL(stringUrl);
+            Log.info(c, "hitHttpEndpoint", "Attempting to connect to " + url);
             con = (HttpURLConnection) url.openConnection();
             con.setRequestProperty("cookie", "cookie=cookie");
             con.setRequestProperty("header", "headervalue");
+            con.setConnectTimeout(60 * 1000); // Timeout is, by default, infinity - we don't want to waste time if the connection can't be established
 
             BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            Log.info(c, "hitHttpEndpointSecondary", url + " reached successfully.");
-
             String line = null;
             StringBuilder lines = new StringBuilder();
-            while ((line = br.readLine()) != null && line.length() > 0) {
-                lines.append(line);
+            try {
+                while ((line = br.readLine()) != null && line.length() > 0) {
+                    lines.append(line);
+                }
+            } finally {
+                br.close();
             }
+            Log.info(c, "hitHttpEndpoint", url + " reached successfully.");
             // Just in case - make sure that we got something returned to us
-            assertNotNull(lines);
+            assertTrue("Nothing was returned from the servlet - there was a problem connecting.", lines.length() > 0);
             con.disconnect();
         } catch (IOException e) {
 
@@ -548,6 +553,7 @@ public class CustomAccessLogFieldsTest {
         HttpsURLConnection con = null;
         try {
             URL url = new URL("https://" + server.getHostname() + ":" + server.getHttpDefaultSecurePort() + servletName + "/?query");
+            Log.info(c, "hitHttpsEndpointSecure", "Attempting to connect to " + url);
             con = (HttpsURLConnection) url.openConnection();
             con.setDoInput(true);
             con.setDoOutput(true);
@@ -562,16 +568,21 @@ public class CustomAccessLogFieldsTest {
             con.setRequestProperty("Authorization", encoded);
             con.setRequestProperty("cookie", "cookie=cookie");
             con.setRequestProperty("header", "headervalue");
+            con.setConnectTimeout(60 * 1000); // Timeout is, by default, infinity - we don't want to waste time if the connection can't be established
 
             BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            Log.info(c, "hitHttpsEndpointSecure", url + " reached successfully.");
-
             String line = null;
             StringBuilder lines = new StringBuilder();
-            while ((line = br.readLine()) != null && line.length() > 0) {
-                lines.append(line);
+            try {
+                while ((line = br.readLine()) != null && line.length() > 0) {
+                    lines.append(line);
+                }
+            } finally {
+                br.close();
             }
-            assertNotNull(lines);
+
+            Log.info(c, "hitHttpsEndpointSecure", url + " reached successfully.");
+            assertTrue("Nothing was returned from the servlet - there was a problem connecting.", lines.length() > 0);
             con.disconnect();
         } catch (IOException e) {
 
