@@ -66,6 +66,7 @@ public class CustomAccessLogFieldsTest {
 
     private static final String MESSAGE_LOG = "logs/messages.log";
     private static final long LOG_TIMEOUT = 30 * 1000;
+    private static final int WAIT_TIMEOUT = 15 * 1000;
 
     @Server("CustomAccessLogFieldsEnv")
     public static LibertyServer envServer;
@@ -163,7 +164,7 @@ public class CustomAccessLogFieldsTest {
     @Test
     public void testAccessLogFieldNamesEnv() throws Exception {
         setUp(envServer);
-        waitForSecurityPrerequisites(envServer, LOG_TIMEOUT);
+        waitForSecurityPrerequisites(envServer, WAIT_TIMEOUT);
         hitHttpsEndpointSecure("/metrics", envServer);
         String line = envServer.waitForStringInLog("liberty_accesslog");
 
@@ -177,7 +178,7 @@ public class CustomAccessLogFieldsTest {
     @Test
     public void testAccessLogFieldNamesBootstrap() throws Exception {
         setUp(bootstrapServer);
-        waitForSecurityPrerequisites(bootstrapServer, LOG_TIMEOUT);
+        waitForSecurityPrerequisites(bootstrapServer, WAIT_TIMEOUT);
         hitHttpsEndpointSecure("/metrics", bootstrapServer);
         String line = bootstrapServer.waitForStringInLog("liberty_accesslog");
 
@@ -192,7 +193,7 @@ public class CustomAccessLogFieldsTest {
     public void testAccessLogFieldNamesXml() throws Exception {
         setUp(xmlServer);
         if (isFirstTimeUsingXmlServer) {
-            waitForSecurityPrerequisites(xmlServer, LOG_TIMEOUT);
+            waitForSecurityPrerequisites(xmlServer, WAIT_TIMEOUT);
         }
         isFirstTimeUsingXmlServer = false;
         hitHttpsEndpointSecure("/metrics", xmlServer);
@@ -258,7 +259,7 @@ public class CustomAccessLogFieldsTest {
         xmlServer.setServerConfigurationFile("accessLogging/server-all-fields.xml");
         waitForConfigUpdate(xmlServer);
         if (isFirstTimeUsingXmlServer) {
-            waitForSecurityPrerequisites(xmlServer, LOG_TIMEOUT);
+            waitForSecurityPrerequisites(xmlServer, WAIT_TIMEOUT);
         }
         isFirstTimeUsingXmlServer = false;
 
@@ -306,7 +307,7 @@ public class CustomAccessLogFieldsTest {
         setUp(xmlServer);
         xmlServer.setMarkToEndOfLog();
         if (isFirstTimeUsingXmlServer) {
-            waitForSecurityPrerequisites(xmlServer, LOG_TIMEOUT);
+            waitForSecurityPrerequisites(xmlServer, WAIT_TIMEOUT);
         }
         isFirstTimeUsingXmlServer = false;
         hitHttpsEndpointSecure("/metrics", xmlServer);
@@ -388,7 +389,8 @@ public class CustomAccessLogFieldsTest {
         xmlServer.setServerConfigurationFile("accessLogging/server-disable-accesslog.xml");
         waitForConfigUpdate(xmlServer);
         hitHttpEndpoint(xmlServer);
-        assertNull("Disabling the accessLogging attribute did not stop JSON access logs from being printed.", xmlServer.waitForStringInLogUsingMark("liberty_accesslog"));
+        assertNull("Disabling the accessLogging attribute did not stop JSON access logs from being printed.",
+                   xmlServer.waitForStringInLogUsingMark("liberty_accesslog", WAIT_TIMEOUT));
     }
 
     /*
@@ -397,11 +399,12 @@ public class CustomAccessLogFieldsTest {
     @Test
     public void testEnableAccessLog() throws Exception {
         setUp(xmlServer);
+        // The server should have accessLogging disabled to begin with
         xmlServer.setServerConfigurationFile("accessLogging/server-disable-accesslog.xml");
         waitForConfigUpdate(xmlServer);
         // Make sure that it doesn't print access logs without the attribute enabled first
         hitHttpEndpoint(xmlServer);
-        assertNull("There were JSON access logs printed when the accessLogging attribute was disabled.", xmlServer.waitForStringInLogUsingMark("liberty_accesslog"));
+        assertNull("There were JSON access logs printed when the accessLogging attribute was disabled.", xmlServer.waitForStringInLogUsingMark("liberty_accesslog", WAIT_TIMEOUT));
         xmlServer.setMarkToEndOfLog();
 
         // the original configuration actually had accessLogging enabled - so let's revert it back to the original
@@ -496,13 +499,13 @@ public class CustomAccessLogFieldsTest {
         // Hit the default endpoint again to make sure the SetterFormatter does not get re-created
         hitHttpEndpoint(multipleHttpEndpointServer);
         assertNull("SetterFormatter was found in trace log for default http endpoint, but should not have been created a second time.",
-                   multipleHttpEndpointServer.waitForStringInTraceUsingMark("createSetterFormatter"));
+                   multipleHttpEndpointServer.waitForStringInTraceUsingMark("createSetterFormatter", WAIT_TIMEOUT));
         multipleHttpEndpointServer.setTraceMarkToEndOfDefaultTrace();
 
         // Hit the secondary endpoint again to make sure the SetterFormatter does not get re-created
         hitHttpEndpoint(multipleHttpEndpointServer);
         assertNull("SetterFormatter was found in trace log for secondary http endpoint, but should not have been created a second time.",
-                   multipleHttpEndpointServer.waitForStringInTraceUsingMark("createSetterFormatter"));
+                   multipleHttpEndpointServer.waitForStringInTraceUsingMark("createSetterFormatter", WAIT_TIMEOUT));
     }
 
     // *** Helper functions ***
@@ -678,7 +681,7 @@ public class CustomAccessLogFieldsTest {
     }
 
     private void waitForConfigUpdate(LibertyServer server) {
-        String result = server.waitForStringInLog("CWWKG0017I", LOG_TIMEOUT);
+        String result = server.waitForStringInLog("CWWKG0017I|CWWKG0018I", LOG_TIMEOUT);
         assertNotNull("Wrong number of updates have occurred", result);
     }
 
