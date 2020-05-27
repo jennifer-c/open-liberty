@@ -32,16 +32,23 @@ public class CollectorJsonHelpers {
 
     private static String startMessageJson = null;
     private static String startMessageJsonFields = null;
-    private static String startAccessLogLogstashCollector = null;
     private static String startTraceJson = null;
     private static String startTraceJsonFields = null;
     private static String startFFDCJson = null;
     private static String startFFDCJsonFields = null;
     private static String startAccessLogJson = null;
     private static String startAccessLogJsonFields = null;
+    private static String startAccessLogLogstashCollector = null;
     private static String startGCJson = null;
     private static String startAuditJson = null;
     private static String startAuditJsonFields = null;
+
+    private static boolean startMessageJsonFieldsUpdate = true;
+    private static boolean startTraceJsonFieldsUpdate = true;
+    private static boolean startFFDCJsonFieldsUpdate = true;
+    private static boolean startAccessLogJsonFieldsUpdate = true;
+    private static boolean startAuditJsonFieldsUpdate = true;
+
     private static final String TYPE_FIELD_KEY = "\"type";
     private static final String TYPE_FIELD_PREPPEND = "\":\"";
     private static final String TYPE_FIELD_APPEND = "\"";
@@ -200,6 +207,12 @@ public class CollectorJsonHelpers {
         startAccessLogJsonFields = null;
         startAuditJsonFields = null;
         startFFDCJsonFields = null;
+//    }
+//        startMessageJsonFieldsUpdate = true;
+//        startTraceJsonFieldsUpdate = true;
+//        startAuditJsonFieldsUpdate = true;
+//        startFFDCJsonFieldsUpdate = true;
+        startAccessLogJsonFieldsUpdate = true;
     }
 
     private static void addUnchangingFields(StringBuilder sb, String hostName, String wlpUserDir, String serverName) {
@@ -394,7 +407,7 @@ public class CollectorJsonHelpers {
         else if (format == AccessLogData.KEYS_LOGSTASH)
             tempStartFields = startAccessLogLogstashCollector;
 
-        if (tempStartFields != null) {
+        if (!startAccessLogJsonFieldsUpdate) {
             jsonBuilder.addPreformatted(tempStartFields);
         } else {
             //@formatter:off
@@ -407,6 +420,7 @@ public class CollectorJsonHelpers {
                 startAccessLogJsonFields = jsonBuilder.toString();
             else if (format == AccessLogData.KEYS_LOGSTASH)
                 startAccessLogLogstashCollector = jsonBuilder.toString();
+            startAccessLogJsonFieldsUpdate = false;
         }
         return jsonBuilder;
     }
