@@ -368,46 +368,39 @@ public class CollectorJsonHelpers {
 
     protected static JSONObjectBuilder startAuditJsonFields(String hostName, String wlpUserDir, String serverName) {
         JSONObjectBuilder jsonBuilder = new JSONObject.JSONObjectBuilder();
-        String tempStartFields = startAuditJsonFields;
-        // We're assuming tempStartFields will never be null - i.e. updateFieldMappings is always called before this method is called
-        jsonBuilder.addPreformatted(tempStartFields);
+        // We're assuming startAuditJsonFields will never be null - i.e. updateFieldMappings is always called before this method is called
+        jsonBuilder.addPreformatted(startAuditJsonFields);
         return jsonBuilder;
     }
 
     protected static JSONObjectBuilder startMessageJsonFields(String hostName, String wlpUserDir, String serverName) {
         JSONObjectBuilder jsonBuilder = new JSONObject.JSONObjectBuilder();
-        String tempStartFields = startMessageJsonFields;
-        // We're assuming tempStartFields will never be null - i.e. updateFieldMappings is always called before this method is called
-        jsonBuilder.addPreformatted(tempStartFields);
+        // We're assuming startMessageJsonFields will never be null - i.e. updateFieldMappings is always called before this method is called
+        jsonBuilder.addPreformatted(startMessageJsonFields);
         return jsonBuilder;
     }
 
     protected static JSONObjectBuilder startTraceJsonFields(String hostName, String wlpUserDir, String serverName) {
         JSONObjectBuilder jsonBuilder = new JSONObject.JSONObjectBuilder();
-        String tempStartFields = startTraceJsonFields;
-        // We're assuming tempStartFields will never be null - i.e. updateFieldMappings is always called before this method is called
-        jsonBuilder.addPreformatted(tempStartFields);
+        // We're assuming startTraceJsonFields will never be null - i.e. updateFieldMappings is always called before this method is called
+        jsonBuilder.addPreformatted(startTraceJsonFields);
         return jsonBuilder;
     }
 
     protected static JSONObjectBuilder startFFDCJsonFields(String hostName, String wlpUserDir, String serverName) {
         JSONObjectBuilder jsonBuilder = new JSONObject.JSONObjectBuilder();
-        String tempStartFields = startFFDCJsonFields;
-        // We're assuming tempStartFields will never be null - i.e. updateFieldMappings is always called before this method is called
-        jsonBuilder.addPreformatted(tempStartFields);
+        // We're assuming startFFDCJsonFields will never be null - i.e. updateFieldMappings is always called before this method is called
+        jsonBuilder.addPreformatted(startFFDCJsonFields);
         return jsonBuilder;
     }
 
     protected static JSONObjectBuilder startAccessLogJsonFields(String hostName, String wlpUserDir, String serverName, int format) {
         JSONObjectBuilder jsonBuilder = new JSONObject.JSONObjectBuilder();
-        String tempStartFields = null;
+        // We're assuming startAccessLogJsonFields and startAccessLogLogstashCollector will never be null - i.e. updateFieldMappings is always called before this method is called
         if (format == AccessLogData.KEYS_JSON)
-            tempStartFields = startAccessLogJsonFields;
+            jsonBuilder.addPreformatted(startAccessLogJsonFields);
         else if (format == AccessLogData.KEYS_LOGSTASH)
-            tempStartFields = startAccessLogLogstashCollector;
-
-        // We're assuming tempStartFields will never be null - i.e. updateFieldMappings is always called before this method is called
-        jsonBuilder.addPreformatted(tempStartFields);
+            jsonBuilder.addPreformatted(startAccessLogLogstashCollector);
         return jsonBuilder;
     }
 
