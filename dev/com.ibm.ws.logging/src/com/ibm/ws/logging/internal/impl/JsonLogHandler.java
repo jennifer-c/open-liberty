@@ -104,9 +104,9 @@ public abstract class JsonLogHandler implements SynchronousHandler, Formatter {
             serverHostName = containerHost;
         }
 
-        CollectorJsonHelpers.hostName = serverHostName;
-        CollectorJsonHelpers.serverName = wlpServerName;
-        CollectorJsonHelpers.wlpUserDir = wlpUserDir;
+        CollectorJsonHelpers.setHostName(serverHostName);
+        CollectorJsonHelpers.setServerName(wlpServerName);
+        CollectorJsonHelpers.setWlpUserDir(wlpUserDir);
 
     }
 
