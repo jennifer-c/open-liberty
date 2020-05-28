@@ -383,13 +383,8 @@ public class CollectorJsonHelpers {
         if (tempStartFields != null)
             jsonBuilder.addPreformatted(tempStartFields);
         else {
-            //@formatter:off
-            jsonBuilder.addField(LogTraceData.getTypeKeyJSON(true), CollectorConstants.MESSAGES_LOG_EVENT_TYPE, false, false)
-            .addField(LogTraceData.getHostKeyJSON(true), hostName, false, false)
-            .addField(LogTraceData.getUserDirKeyJSON(true), wlpUserDir, false, true)
-            .addField(LogTraceData.getServerNameKeyJSON(true), serverName, false, false);
-            //@formatter:on
-            startMessageJsonFields = jsonBuilder.toString();
+            // This case should never happen because we initialize the field at the beginning of server startup, but what if something goes wrong?
+            // Should something be returned or have an exception thrown here?
         }
         return jsonBuilder;
     }
