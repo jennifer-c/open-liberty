@@ -17,6 +17,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -47,6 +50,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import com.ibm.websphere.simplicity.RemoteFile;
 import com.ibm.websphere.simplicity.config.Logging;
 import com.ibm.websphere.simplicity.config.ServerConfiguration;
 import com.ibm.websphere.simplicity.log.Log;
@@ -360,8 +364,20 @@ public class CustomAccessLogFieldsTest {
 
         // unfortunately, our JSON log isn't ordered like the http access logs
         // easier to check that the value shows up in the http_access.log at some point; for duplicate values, let's just remove it with each pass-through.
-        String accessLogLine = readFile(xmlServerWithMetrics.getServerRoot() + "/logs/http_access.log");
+        
+        String accessLog = xmlServerWithMetrics.getServerRoot() + "/logs/http_access.log";
+        System.out.println(accessLog);
+        String accessLogLine = readFile(accessLog);
+        System.out.println("First read file");
+        if (accessLogLine == null || accessLogLine.isEmpty()) {
+            // Sleep 5 sec then try again
+            Thread.sleep(10000);
+            accessLogLine = readFile(accessLog);
+            System.out.println("Read file a second time after sleep");
+        }
         assertNotNull("The http_access.log file is empty or could not be read.", accessLogLine);
+        assertFalse("The http_access.log file is empty.", accessLogLine.isEmpty());
+
         for (String s : parsedLine.values()) {
             if (accessLogLine.contains(s)) {
                 // let's remove it, in case there's a duplicate value for a different field
@@ -710,18 +726,22 @@ public class CustomAccessLogFieldsTest {
         }
         return keyValuePairs;
     }
+    
+    private String readFile(String file) throws Exception {
+        File f = new File(file);
+        if (!f.exists() || f.isDirectory())
+            throw new FileNotFoundException(file);
 
-    private String readFile(String file) {
+        StringBuilder sb = new StringBuilder();
+        BufferedReader br = new BufferedReader(new FileReader(f));
         try {
-            BufferedReader reader = new BufferedReader(new FileReader(file));
             String line;
-            line = reader.readLine();
-            reader.close();
-            return line;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+            while ((line = br.readLine()) != null)
+                sb.append(line).append('\n');
+        } finally {
+            br.close();
         }
+        return sb.toString();
     }
 
     private void waitForConfigUpdate(LibertyServer server) {
